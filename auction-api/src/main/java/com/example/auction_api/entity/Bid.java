@@ -1,0 +1,34 @@
+package com.example.auction_api.entity;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Entity
+@NoArgsConstructor
+@Getter
+@Setter
+@Table(name = "bid")
+public class Bid {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private BigDecimal amount;
+
+    @Column(name = "bit_time")
+    private LocalDateTime bitDate;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "auction_id",nullable = false)
+    private Auction auction;
+}
