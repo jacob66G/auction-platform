@@ -40,9 +40,6 @@ public class Auction {
     @Column(name = "actual_price")
     private BigDecimal actualPrice;
 
-    @Column(name = "watcher_count")
-    private Integer watcherCount;
-
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -57,9 +54,6 @@ public class Auction {
     @OneToMany(mappedBy = "auction", cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH}, orphanRemoval = true)
     @OrderBy("amount desc")
     private List<Bid> bids;
-
-    @ManyToMany(mappedBy = "watchedAuctions")
-    private List<User> watchers;
 
     public void addAuctionImg(AuctionImg auctionImg) {
         if (this.auctionImgs == null) {

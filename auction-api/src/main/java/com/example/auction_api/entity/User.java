@@ -35,15 +35,6 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Bid> bids;
 
-
-    @ManyToMany
-    @JoinTable(
-            name = "user_auction_watch",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "auction_id")
-    )
-    private List<Auction> watchedAuctions;
-
     public void addAuction(Auction auction) {
         if (this.auctions == null) {
             this.auctions = new ArrayList<>();
@@ -57,18 +48,7 @@ public class User {
         if (this.bids == null) {
             this.bids = new ArrayList<>();
         }
-
         this.bids.add(bid);
         bid.setUser(this);
     }
-
-    public void addWatchedAuction(Auction auction) {
-        if (this.watchedAuctions == null) {
-            this.watchedAuctions = new ArrayList<>();
-        }
-
-        this.watchedAuctions.add(auction);
-        auction.getWatchers().add(this);
-    }
-
 }
