@@ -8,7 +8,6 @@ import com.example.auction_api.entity.Auction;
 import com.example.auction_api.entity.AuctionImg;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,7 +33,6 @@ public class AuctionMapper {
                 auction.getUser().getUsername(),
                 auction.getCategory().getName(),
                 auctionImgUrl,
-                auction.getWatcherCount(),
                 auction.getActualPrice()
         );
     }
@@ -59,7 +57,6 @@ public class AuctionMapper {
                 auction.getUser().getUsername(),
                 auction.getCategory().getName(),
                 auctionImgsUrls,
-                auction.getWatcherCount(),
                 auction.getActualPrice(),
                 bidResponses
         );
