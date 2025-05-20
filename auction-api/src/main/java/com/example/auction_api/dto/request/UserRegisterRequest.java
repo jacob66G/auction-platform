@@ -1,10 +1,11 @@
 package com.example.auction_api.dto.request;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
-import java.math.BigDecimal;
-
-public record UserRequest(
+public record UserRegisterRequest(
         @NotBlank(message = "Username must not be blank")
         @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
         @Pattern(message = "Username contains invalid characters", regexp = "^[a-zA-Z0-9]")
@@ -16,10 +17,6 @@ public record UserRequest(
 
         @NotBlank(message = "Email must not be blank")
         @Email(message = "Email contains invalid format")
-        String email,
-
-        @NotNull(message = "Balance amount must not be null")
-        @Min(value = 0, message = "Balance price must be at least 0")
-        BigDecimal balance
+        String email
 ) {
 }

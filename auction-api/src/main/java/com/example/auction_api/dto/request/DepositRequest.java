@@ -5,12 +5,9 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
-public record BidRequest(
+public record DepositRequest(
         @NotNull(message = "Bid amount must not be null")
-        @Min(value = 0, message = "Bid price must be at least 0")
-        BigDecimal amount,
-
-        @NotNull(message = "Auction ID must not be null")
-        Long auctionId
+        @Min(value = 0, message = "Deposit price must be at least 0")
+        BigDecimal amount
 ) {
 }
