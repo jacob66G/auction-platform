@@ -23,12 +23,6 @@ public class AuctionDaoImpl implements AuctionDao {
     private EntityManager em;
 
     @Override
-    public List<Auction> findAll() {
-        return em.createQuery("SELECT a FROM Auction a", Auction.class)
-                .getResultList();
-    }
-
-    @Override
     public List<Auction> findByCriteria(AuctionSearchCriteria criteria) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Auction> cq = cb.createQuery(Auction.class);
@@ -38,43 +32,42 @@ public class AuctionDaoImpl implements AuctionDao {
 
         List<Predicate> predicates = new ArrayList<>();
 
-        if(criteria.title() != null) {
-            predicates.add(cb.like(cb.lower(root.get("title")), "%"+criteria.title().toLowerCase()+"%"));
+        if(criteria.getTitle() != null) {
+            predicates.add(cb.like(cb.lower(root.get("title")), "%"+criteria.getTitle().toLowerCase()+"%"));
         }
-        if(criteria.username() != null) {
-            predicates.add(cb.like(cb.lower(userJoin.get("username")), "%"+criteria.username().toLowerCase()+"%"));
+        if(criteria.getUsername() != null) {
+            predicates.add(cb.like(cb.lower(userJoin.get("username")), "%"+criteria.getUsername().toLowerCase()+"%"));
         }
-        if (criteria.categoryIds() != null && !criteria.categoryIds().isEmpty()) {
-            predicates.add(categoryJoin.get("id").in(criteria.categoryIds()));
+        if (criteria.getCategoryIds() != null && !criteria.getCategoryIds().isEmpty()) {
+            predicates.add(categoryJoin.get("id").in(criteria.getCategoryIds()));
         }
 
-        if (criteria.statuses() != null && !criteria.statuses().isEmpty()) {
+        if (criteria.getStatuses() != null && !criteria.getStatuses().isEmpty()) {
             predicates.add(cb.lower(root.get("auctionStatus")).in(
-                    criteria.statuses().stream().map(String::toLowerCase).collect(Collectors.toList())
+                    criteria.getStatuses().stream().map(String::toLowerCase).collect(Collectors.toList())
             ));
         }
 
         cq.where(predicates.toArray(new Predicate[0]));
 
         //sorting
-        Path<?> sortField = switch (criteria.sortBy()) {
+        Path<?> sortField = switch (criteria.getSortBy()) {
             case "endTime" -> root.get("endTime");
             case "actualPrice" -> root.get("actualPrice");
-            case "popularity" -> root.get("watcherCount");
             default -> root.get("startTime");
         };
 
-        cq.orderBy(criteria.ascending() ? cb.asc(sortField) : cb.desc(sortField));
+        cq.orderBy(criteria.isAscending() ? cb.asc(sortField) : cb.desc(sortField));
 
         TypedQuery<Auction> query = em.createQuery(cq);
-        query.setFirstResult(criteria.page() * criteria.size());
-        query.setMaxResults(criteria.size());
+        query.setFirstResult(criteria.getPage() * criteria.getSize());
+        query.setMaxResults(criteria.getSize());
 
         return query.getResultList();
     }
 
     @Override
-    public List<Auction> findByUserId(Long userId, AuctionSearchCriteria criteria) {
+    public List<Auction> findByUserIdAndCriteria(Long userId, AuctionSearchCriteria criteria) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Auction> cq = cb.createQuery(Auction.class);
         Root<Auction> root = cq.from(Auction.class);
@@ -86,36 +79,34 @@ public class AuctionDaoImpl implements AuctionDao {
 
         predicates.add(cb.equal(userJoin.get("id"), userId));
 
-        if(criteria.title() != null) {
-            predicates.add(cb.like(cb.lower(root.get("title")), "%"+criteria.title().toLowerCase()+"%"));
+        if(criteria.getTitle() != null) {
+            predicates.add(cb.like(cb.lower(root.get("title")), "%"+criteria.getTitle().toLowerCase()+"%"));
         }
-        if (criteria.categoryIds() != null && !criteria.categoryIds().isEmpty()) {
-            predicates.add(categoryJoin.get("id").in(criteria.categoryIds()));
+        if (criteria.getCategoryIds() != null && !criteria.getCategoryIds().isEmpty()) {
+            predicates.add(categoryJoin.get("id").in(criteria.getCategoryIds()));
         }
-
-        if (criteria.statuses() != null && !criteria.statuses().isEmpty()) {
+        if (criteria.getStatuses() != null && !criteria.getStatuses().isEmpty()) {
             predicates.add(cb.lower(root.get("auctionStatus")).in(
-                    criteria.statuses().stream().map(String::toLowerCase).collect(Collectors.toList())
+                    criteria.getStatuses().stream().map(String::toLowerCase).collect(Collectors.toList())
             ));
         }
 
         cq.where(predicates.toArray(new Predicate[0]));
 
         //sorting
-        Path<?> sortField = switch (criteria.sortBy()) {
+        Path<?> sortField = switch (criteria.getSortBy()) {
             case "endTime" -> root.get("endTime");
             case "actualPrice" -> root.get("actualPrice");
-            case "popularity" -> root.get("watcherCount");
             default -> root.get("startTime");
         };
 
-        cq.orderBy(criteria.ascending() ? cb.asc(sortField) : cb.desc(sortField));
+        cq.orderBy(criteria.isAscending() ? cb.asc(sortField) : cb.desc(sortField));
 
         cq.distinct(true);
 
         TypedQuery<Auction> query = em.createQuery(cq);
-        query.setFirstResult(criteria.page() * criteria.size());
-        query.setMaxResults(criteria.size());
+        query.setFirstResult(criteria.getPage() * criteria.getSize());
+        query.setMaxResults(criteria.getSize());
 
         return query.getResultList();
     }
@@ -131,7 +122,16 @@ public class AuctionDaoImpl implements AuctionDao {
     }
 
     @Override
-    public Optional<Auction> findAuctionById(Long id) {
+    public List<Auction> findByCategoryId(Long categoryId) {
+        String query = "SELECT a FROM Auction a WHERE a.category.id = :categoryId";
+
+        return em.createQuery(query, Auction.class)
+                .setParameter("categoryId", categoryId)
+                .getResultList();
+    }
+
+    @Override
+    public Optional<Auction> findById(Long id) {
         return Optional.ofNullable(em.find(Auction.class, id));
     }
 
