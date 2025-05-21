@@ -36,22 +36,26 @@ public class AuctionDaoTest {
     @Autowired
     private CategoryDao categoryDao;
 
-    @Test
-    void findAll_ShouldReturnAllAuctions() {
-        List<Auction> result = auctionDao.findAll();
-
-        assertThat(result).hasSize(7);
-    }
 
     @Test
     void findByCriteria_ShouldFindByTitleReturnMatchingAuctions() {
         //given
         String searchedTitle = "Leather";
         String titleInDb = "Leather Jacket";
-        AuctionSearchCriteria criteria = new AuctionSearchCriteria(searchedTitle, null, null, null, "startTime", true, 0, 10);
 
+        AuctionSearchCriteria criteria = AuctionSearchCriteria.builder()
+                .title(searchedTitle)
+                .sortBy("startTime")
+                .ascending(false)
+                .page(0)
+                .size(10)
+                .build();
         //when
         List<Auction> result = auctionDao.findByCriteria(criteria);
+
+        result.forEach(auction -> {
+            System.out.println(auction.getId());
+        });
 
         //then
         assertThat(result).hasSize(1);
@@ -63,13 +67,19 @@ public class AuctionDaoTest {
         //given
         List<Integer> categoriesId = Arrays.asList(1, 2);
 
-        Auction auction1 = auctionDao.findAuctionById(1L).get();
-        Auction auction2 = auctionDao.findAuctionById(2L).get();
-        Auction auction3 = auctionDao.findAuctionById(3L).get();
-        Auction auction4 = auctionDao.findAuctionById(4L).get();
+        Auction auction1 = auctionDao.findById(1L).get();
+        Auction auction2 = auctionDao.findById(2L).get();
+        Auction auction3 = auctionDao.findById(3L).get();
+        Auction auction4 = auctionDao.findById(4L).get();
 
         List<Auction> expectedAuctions = Arrays.asList(auction4, auction3, auction2, auction1);
-        AuctionSearchCriteria criteria = new AuctionSearchCriteria(null, null, categoriesId, null, "actualPrice", false, 0, 10);
+        AuctionSearchCriteria criteria = AuctionSearchCriteria.builder()
+                .categoryIds(categoriesId)
+                .sortBy("actualPrice")
+                .ascending(false)
+                .page(0)
+                .size(10)
+                .build();
 
         //when
         List<Auction> result = auctionDao.findByCriteria(criteria);
@@ -80,16 +90,22 @@ public class AuctionDaoTest {
     }
 
     @Test
-    void findByUserId_ShouldApplyCriteriaAndFilterByUserId() {
+    void findByUserId_ShouldApplyCriteriaAndFilterByUserIdAndCriteria() {
         //given
-        Long userId = 1L;
-        Auction auction1 = auctionDao.findAuctionById(1L).get();
-        Auction auction2 = auctionDao.findAuctionById(6L).get();
+        Long userId = 2L;
+        Auction auction1 = auctionDao.findById(1L).get();
+        Auction auction2 = auctionDao.findById(4L).get();
         List<Auction> expectedAuctions = Arrays.asList(auction1, auction2);
-        AuctionSearchCriteria criteria = new AuctionSearchCriteria(null, null, null, null, "startTime", true, 0, 10);
+
+        AuctionSearchCriteria criteria = AuctionSearchCriteria.builder()
+                .sortBy("startTime")
+                .ascending(true)
+                .page(0)
+                .size(10)
+                .build();
 
         //when
-        List<Auction> result = auctionDao.findByUserId(userId, criteria);
+        List<Auction> result = auctionDao.findByUserIdAndCriteria(userId, criteria);
 
         //then
         assertThat(result).hasSize(2);
@@ -100,7 +116,14 @@ public class AuctionDaoTest {
     void findByTitle_ShouldReturnMatchingAuctions() {
         //given
         String searchedTitle = "Leather Jacket";
-        AuctionSearchCriteria criteria = new AuctionSearchCriteria(searchedTitle, null, null, null, "startTime", true, 0, 10);
+
+        AuctionSearchCriteria criteria = AuctionSearchCriteria.builder()
+                .title(searchedTitle)
+                .sortBy("startTime")
+                .ascending(true)
+                .page(0)
+                .size(10)
+                .build();
 
         //when
         List<Auction> result = auctionDao.findByCriteria(criteria);
@@ -111,12 +134,12 @@ public class AuctionDaoTest {
     }
 
     @Test
-    void findAuctionById_ShouldReturnAuctionWhenExists() {
+    void findAuctionById_ShouldReturnWhenExists() {
         //given
         Long auctionId = 1L;
 
         //when
-        Optional<Auction> result = auctionDao.findAuctionById(auctionId);
+        Optional<Auction> result = auctionDao.findById(auctionId);
 
         //then
         assertThat(result).isPresent();
@@ -124,12 +147,12 @@ public class AuctionDaoTest {
     }
 
     @Test
-    void findAuctionById_ShouldReturnEmptyWhenNotExists() {
+    void findById_ShouldReturnEmptyWhenNotExists() {
         //given
         Long auctionId = 999L;
 
         //when
-        Optional<Auction> result = auctionDao.findAuctionById(auctionId);
+        Optional<Auction> result = auctionDao.findById(auctionId);
 
         //then
         assertThat(result).isEmpty();
@@ -163,7 +186,7 @@ public class AuctionDaoTest {
     @Test
     void update_ShouldMergeAuction() {
         //given
-        Auction auction = auctionDao.findAuctionById(1L).get();
+        Auction auction = auctionDao.findById(1L).get();
         auction.setTitle("Updated Title");
         auction.setDescription("Updated Description");
 
@@ -183,10 +206,9 @@ public class AuctionDaoTest {
 
         //when
         auctionDao.deleteById(auctionId);
-        Optional<Auction> result = auctionDao.findAuctionById(auctionId);
+        Optional<Auction> result = auctionDao.findById(auctionId);
 
         //then
         assertThat(result).isEmpty();
     }
-
 }

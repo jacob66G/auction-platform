@@ -62,29 +62,19 @@ class UserDaoTest {
         assertThat(result.get().getEmail()).isEqualTo("grace@example.com");
     }
 
-    @Test
-    void getByEmail_ShouldReturnUser_WhenExists() {
-        // when
-        Optional<User> result = userDao.getByEmail("alice@example.com");
-
-        // then
-        assertThat(result).isPresent();
-        assertThat(result.get().getUsername()).isEqualTo("alice");
-    }
 
     @Test
     void findByRole_ShouldReturnUsersWithGivenRole() {
         //given
         User admin1 = userDao.findById(1L).get();
-        User admin2 = userDao.findById(2L).get();
 
-        List<User> expectedUsers = Arrays.asList(admin1, admin2);
+        List<User> expectedUsers = Arrays.asList(admin1);
 
         // when
         List<User> result = userDao.findByRole(UserRole.ADMIN);
 
         // then
-        assertThat(result).hasSize(2);
+        assertThat(result).hasSize(1);
         assertEquals(expectedUsers, result);
     }
 

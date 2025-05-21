@@ -77,7 +77,7 @@ public class BidDaoTest {
     void save_ShouldPersistBid() {
         // given
         User user = userDao.findById(1L).get();
-        Auction auction = auctionDao.findAuctionById(1L).get();
+        Auction auction = auctionDao.findById(1L).get();
 
         Bid bid = new Bid();
         bid.setAmount(BigDecimal.valueOf(200));
