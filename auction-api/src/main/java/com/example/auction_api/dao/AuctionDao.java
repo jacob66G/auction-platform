@@ -3,6 +3,7 @@ package com.example.auction_api.dao;
 import com.example.auction_api.dto.request.AuctionSearchCriteria;
 import com.example.auction_api.entity.Auction;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,4 +16,5 @@ public interface AuctionDao {
     Auction save(Auction auction);
     Auction update(Auction auction);
     void deleteById(Long id);
+    List<Auction> findByEndTimeBefore(LocalDateTime dateTime);
 }

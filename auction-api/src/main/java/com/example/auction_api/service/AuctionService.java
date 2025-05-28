@@ -24,4 +24,5 @@ public interface AuctionService {
     void rejectDeletionAuction(Long id);
     void approveSaveAuction(Long id);
     void rejectSaveAuction(Long id);
+    void endOfAuction(Auction auction);
 }

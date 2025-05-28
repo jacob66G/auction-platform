@@ -27,13 +27,13 @@ public class UserServiceImpl implements UserService {
     private final UserDao userDao;
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserMapper mapper;
-    private final AuthenticationService authService;
+    private final AuthenticationServiceImpl authService;
 
     public UserServiceImpl(
             UserDao userDao,
             BCryptPasswordEncoder passwordEncoder,
             UserMapper mapper,
-            AuthenticationService authService
+            AuthenticationServiceImpl authService
     ) {
         this.userDao = userDao;
         this.passwordEncoder = passwordEncoder;

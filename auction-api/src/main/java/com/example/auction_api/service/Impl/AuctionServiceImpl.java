@@ -11,11 +11,12 @@ import com.example.auction_api.dto.enums.AuctionStatus;
 import com.example.auction_api.entity.Bid;
 import com.example.auction_api.entity.Category;
 import com.example.auction_api.entity.User;
+import com.example.auction_api.event.*;
 import com.example.auction_api.exception.*;
 import com.example.auction_api.mapper.AuctionMapper;
-import com.example.auction_api.service.AuctionService;
-import com.example.auction_api.service.UserService;
+import com.example.auction_api.service.*;
 import jakarta.transaction.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -34,19 +35,23 @@ public class AuctionServiceImpl implements AuctionService {
     private final AuthenticationServiceImpl authService;
     private final UserService userService;
     private final BidService bidService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public AuctionServiceImpl(
             AuctionDao auctionDao,
             CategoryService categoryService,
             AuctionMapper mapper,
             AuthenticationServiceImpl authService,
-            UserService userService, BidService bidService) {
+            UserService userService, BidService bidService,
+            AuctionEventListener auctionEventListener,
+            ApplicationEventPublisher applicationEventPublisher) {
         this.auctionDao = auctionDao;
         this.categoryService = categoryService;
         this.mapper = mapper;
         this.authService = authService;
         this.userService = userService;
         this.bidService = bidService;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Override
@@ -118,7 +123,7 @@ public class AuctionServiceImpl implements AuctionService {
         existingAuction.setDescription(auction.description());
         existingAuction.setCategory(category);
         existingAuction.setStartingPrice(auction.startingPrice());
-        existingAuction.setEndTime(auction.endTime());
+        existingAuction.setEndTime(auction.endTime().truncatedTo(ChronoUnit.MINUTES));
         existingAuction.setAuctionStatus(AuctionStatus.PENDING_APPROVAL);
 
         return mapper.toResponse(auctionDao.update(existingAuction));
@@ -180,8 +185,9 @@ public class AuctionServiceImpl implements AuctionService {
         refundBidders(auction);
 
         auction.setAuctionStatus(AuctionStatus.CANCELLED);
-
         auctionDao.update(auction);
+
+        applicationEventPublisher.publishEvent(new AuctionCancellationApprovalEvent(auction));
     }
 
     @Override
@@ -194,8 +200,9 @@ public class AuctionServiceImpl implements AuctionService {
         }
 
         auction.setAuctionStatus(AuctionStatus.ACTIVE);
-
         auctionDao.update(auction);
+
+        applicationEventPublisher.publishEvent(new AuctionCancellationRejectionEvent(auction));
     }
 
     @Override
@@ -208,8 +215,9 @@ public class AuctionServiceImpl implements AuctionService {
         }
 
         auction.setAuctionStatus(AuctionStatus.ACTIVE);
-
         auctionDao.update(auction);
+
+        applicationEventPublisher.publishEvent(new AuctionApprovalEvent(auction));
     }
 
     @Override
@@ -222,8 +230,25 @@ public class AuctionServiceImpl implements AuctionService {
         }
 
         auction.setAuctionStatus(AuctionStatus.REJECTED);
-
         auctionDao.update(auction);
+
+        applicationEventPublisher.publishEvent(new AuctionRejectEvent(auction));
+    }
+
+    @Override
+    @Transactional
+    public void endOfAuction(Auction auction) {
+        if(auction.getEndTime().isBefore(LocalDateTime.now()) && auction.getAuctionStatus().equals(AuctionStatus.ACTIVE)) {
+            if(auction.getBids().isEmpty()) {
+                auction.setAuctionStatus(AuctionStatus.EXPIRED);
+            } else {
+                auction.setAuctionStatus(AuctionStatus.FINISHED);
+
+                Bid winnerBid = bidService.getWinnerBid(auction.getId());
+                applicationEventPublisher.publishEvent(new AuctionEndEvent(auction, winnerBid));
+            }
+            auctionDao.update(auction);
+        }
     }
 
     private void validateTitle(String title, Long auctionId) {
@@ -254,7 +279,6 @@ public class AuctionServiceImpl implements AuctionService {
 
     private void refundBidders(Auction auction) {
         if(!auction.getBids().isEmpty()) {
-
             for(Bid bid : auction.getBids()) {
                 User user = bid.getUser();
                 BigDecimal amount = bid.getAmount();

@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 public record UserRegisterRequest(
         @NotBlank(message = "Username must not be blank")
         @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
-        @Pattern(message = "Username contains invalid characters", regexp = "^[a-zA-Z0-9]")
+        @Pattern(message = "Username contains invalid characters", regexp = "^[a-zA-Z0-9]+$")
         String username,
 
         @NotBlank(message = "Password must not be blank")

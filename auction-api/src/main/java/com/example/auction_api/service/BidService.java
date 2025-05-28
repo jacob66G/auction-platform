@@ -13,4 +13,5 @@ public interface BidService {
     Bid getBidEntityById(Long id);
     BidResponse createBid(BidRequest bidRequest);
     void deleteBid(Long id);
+    Bid getWinnerBid(Long auctionId);
 }

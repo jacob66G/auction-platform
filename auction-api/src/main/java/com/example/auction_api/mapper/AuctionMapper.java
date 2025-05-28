@@ -8,6 +8,7 @@ import com.example.auction_api.entity.Auction;
 import com.example.auction_api.entity.AuctionImg;
 import org.springframework.stereotype.Component;
 
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -67,8 +68,8 @@ public class AuctionMapper {
         auction.setTitle(request.title());
         auction.setDescription(request.description());
         auction.setStartingPrice(request.startingPrice());
-        auction.setStartTime(request.startTime());
-        auction.setEndTime(request.endTime());
+        auction.setStartTime(request.startTime().truncatedTo(ChronoUnit.MINUTES));
+        auction.setEndTime(request.endTime().truncatedTo(ChronoUnit.MINUTES));
 
         return auction;
     }

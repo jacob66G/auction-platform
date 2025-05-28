@@ -90,6 +90,8 @@ public class BidServiceImpl implements BidService {
         user.addBid(newBid);
         auction.addBid(newBid);
 
+        auction.setActualPrice(bid.amount());
+
         return mapper.toResponse(bidDao.save(newBid));
     }
 
@@ -98,6 +100,12 @@ public class BidServiceImpl implements BidService {
     public void deleteBid(Long id) {
         getBidEntityById(id);
         bidDao.deleteById(id);
+    }
+
+    @Override
+    public Bid getWinnerBid(Long auctionId) {
+        return bidDao.findTop1ByAuctionIdOrderByAmountDesc(auctionId)
+                .orElseThrow(() -> new ResourceNotFoundException("No bids for auction"));
     }
 
     private void validateHighestBid(BigDecimal amount, Long auctionId) {

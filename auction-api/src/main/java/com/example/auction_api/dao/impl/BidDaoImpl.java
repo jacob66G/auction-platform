@@ -20,7 +20,8 @@ public class BidDaoImpl implements BidDao {
         String query = "SELECT b FROM Bid b WHERE b.auction.id = :auctionId";
 
         return em.createQuery(query, Bid.class)
-                .setParameter("auctionId", auctionId).getResultList();
+                .setParameter("auctionId", auctionId)
+                .getResultList();
     }
 
     @Override
@@ -51,5 +52,17 @@ public class BidDaoImpl implements BidDao {
     @Override
     public void deleteById(Long id) {
         em.remove(em.find(Bid.class, id));
+    }
+
+    @Override
+    public Optional<Bid> findTop1ByAuctionIdOrderByAmountDesc(Long auctionId) {
+        String query = "SELECT b FROM Bid b WHERE b.auction.id = :auctionId ORDER BY b.amount DESC";
+
+        List<Bid> bids = em.createQuery(query, Bid.class)
+                .setParameter("auctionId", auctionId)
+                .setMaxResults(1)
+                .getResultList();
+
+        return bids.stream().findFirst();
     }
 }

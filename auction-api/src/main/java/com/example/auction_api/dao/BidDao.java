@@ -12,4 +12,5 @@ public interface BidDao {
     Bid save(Bid bid);
     Bid update(Bid bid);
     void deleteById(Long id);
+    Optional<Bid> findTop1ByAuctionIdOrderByAmountDesc(Long auctionId);
 }
