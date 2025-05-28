@@ -114,36 +114,81 @@ public class AuctionDaoTest {
 
     @Test
     void findByTitle_ShouldReturnMatchingAuctions() {
-        //given
+        // given
         String searchedTitle = "Leather Jacket";
 
-        AuctionSearchCriteria criteria = AuctionSearchCriteria.builder()
-                .title(searchedTitle)
-                .sortBy("startTime")
-                .ascending(true)
-                .page(0)
-                .size(10)
-                .build();
+        // when
+        List<Auction> result = auctionDao.findByTitle(searchedTitle, null);
 
-        //when
-        List<Auction> result = auctionDao.findByCriteria(criteria);
-
-        //then
+        // then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getTitle()).isEqualTo(searchedTitle);
     }
 
     @Test
-    void findAuctionById_ShouldReturnWhenExists() {
-        //given
+    void findByTitle_ShouldExcludeSpecificAuctionId() {
+        // given
+        String searchedTitle = "iPhone 14";
+        Long excludedAuctionId = 1L;
+
+        // when
+        List<Auction> result = auctionDao.findByTitle(searchedTitle, excludedAuctionId);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void findByTitle_ShouldReturnEmptyList_WhenNoMatches() {
+        // given
+        String searchedTitle = "Non-existent Item";
+
+        // when
+        List<Auction> result = auctionDao.findByTitle(searchedTitle, null);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+
+    @Test
+    void findByCategoryId_ShouldReturnElectronicsAuctions() {
+        // given
+        Long electronicsCategory = 1L;
+
+        // when
+        List<Auction> result = auctionDao.findByCategoryId(electronicsCategory);
+
+        // then
+        assertThat(result).hasSize(3);
+        assertThat(result).extracting(Auction::getTitle)
+                .containsExactlyInAnyOrder("iPhone 14", "Samsung Galaxy S22", "MacBook Pro 13\"");
+    }
+
+    @Test
+    void findByCategoryId_ShouldReturnEmptyList_WhenNoCategoryExists() {
+        // given
+        Long nonExistentCategory = 999L;
+
+        // when
+        List<Auction> result = auctionDao.findByCategoryId(nonExistentCategory);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void findById_ShouldReturnAuction_WhenExists() {
+        // given
         Long auctionId = 1L;
 
-        //when
+        // when
         Optional<Auction> result = auctionDao.findById(auctionId);
 
-        //then
+        // then
         assertThat(result).isPresent();
-        assertThat(result.get().getId()).isEqualTo(auctionId);
+        assertThat(result.get().getTitle()).isEqualTo("iPhone 14");
+        assertThat(result.get().getStartingPrice()).isEqualByComparingTo(BigDecimal.valueOf(300.00));
     }
 
     @Test
@@ -209,6 +254,32 @@ public class AuctionDaoTest {
         Optional<Auction> result = auctionDao.findById(auctionId);
 
         //then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void findByEndTimeBefore_ShouldReturnActiveAuctionsEndingBefore() {
+        // given
+        LocalDateTime futureTime = LocalDateTime.now().plusDays(20);
+
+        // when
+        List<Auction> result = auctionDao.findByEndTimeBefore(futureTime);
+
+        // then
+        assertThat(result).hasSize(7);
+        assertThat(result).allMatch(auction -> auction.getAuctionStatus() == AuctionStatus.ACTIVE);
+        assertThat(result).allMatch(auction -> auction.getEndTime().isBefore(futureTime));
+    }
+
+    @Test
+    void findByEndTimeBefore_ShouldReturnEmptyList_WhenNoAuctionsEndBefore() {
+        // given
+        LocalDateTime pastTime = LocalDateTime.now().minusDays(1);
+
+        // when
+        List<Auction> result = auctionDao.findByEndTimeBefore(pastTime);
+
+        // then
         assertThat(result).isEmpty();
     }
 }
