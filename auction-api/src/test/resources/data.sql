@@ -21,7 +21,7 @@ INSERT INTO users (username, password, email, role, balance) VALUES
 -- Auctions
 INSERT INTO auction (
     title, description, starting_price, start_time, end_time,
-    auction_status, actual_price, user_id, category_id
+    status, actual_price, user_id, category_id
 ) VALUES
       ('iPhone 14', 'Brand new iPhone 14', 300.00, CURRENT_TIMESTAMP, DATEADD('DAY', 7, CURRENT_TIMESTAMP), 'ACTIVE', 320.00,  2, 1),
       ('Samsung Galaxy S22', 'Brand new Samsung Galaxy S22', 700.00, CURRENT_TIMESTAMP, DATEADD('DAY', 7, CURRENT_TIMESTAMP), 'ACTIVE', 720.00,  3, 1),

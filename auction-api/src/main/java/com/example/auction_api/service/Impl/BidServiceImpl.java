@@ -12,7 +12,7 @@ import com.example.auction_api.mapper.BidMapper;
 import com.example.auction_api.service.AuctionService;
 import com.example.auction_api.service.BidService;
 import com.example.auction_api.service.UserService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 

@@ -14,7 +14,7 @@ import com.example.auction_api.exception.InvalidPasswordException;
 import com.example.auction_api.exception.UsernameAlreadyExistsException;
 import com.example.auction_api.mapper.UserMapper;
 import com.example.auction_api.service.UserService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 

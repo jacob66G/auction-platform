@@ -10,7 +10,7 @@ import com.example.auction_api.exception.ResourceNotFoundException;
 import com.example.auction_api.mapper.CategoryMapper;
 import com.example.auction_api.service.AuctionService;
 import com.example.auction_api.service.CategoryService;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 

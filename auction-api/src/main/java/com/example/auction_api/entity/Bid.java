@@ -31,4 +31,15 @@ public class Bid {
     @ManyToOne
     @JoinColumn(name = "auction_id",nullable = false)
     private Auction auction;
+
+    @Override
+    public String toString() {
+        return "Bid{" +
+                "id=" + id +
+                ", amount=" + amount +
+                ", bitDate=" + bitDate +
+                ", user=" + user +
+                ", auction=" + auction.getTitle() +
+                '}';
+    }
 }

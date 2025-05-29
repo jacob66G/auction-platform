@@ -51,4 +51,15 @@ public class User {
         this.bids.add(bid);
         bid.setUser(this);
     }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", email='" + email + '\'' +
+                ", role=" + role.name() +
+                ", balance=" + balance +
+                '}';
+    }
 }

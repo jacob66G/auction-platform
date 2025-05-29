@@ -4,6 +4,7 @@ import com.example.auction_api.entity.Auction;
 import com.example.auction_api.entity.Bid;
 import com.example.auction_api.entity.User;
 import com.example.auction_api.service.EmailSenderService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -12,8 +13,8 @@ import org.springframework.stereotype.Service;
 import java.util.HashSet;
 import java.util.Set;
 
-
 @Service
+@Slf4j
 public class EmailSenderServiceImpl implements EmailSenderService {
 
     private final JavaMailSender sender;
@@ -88,12 +89,20 @@ public class EmailSenderServiceImpl implements EmailSenderService {
     }
 
     private void send(String to, String subject, String text) {
-        SimpleMailMessage msg = new SimpleMailMessage();
-        msg.setFrom(fromAddress);
-        msg.setTo(to);
-        msg.setSubject(subject);
-        msg.setText(text);
-        sender.send(msg);
+        try {
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setFrom(fromAddress);
+            msg.setTo(to);
+            msg.setSubject(subject);
+            msg.setText(text);
+
+            log.info("✉ Sending email to={} subject='{}'", to, subject);
+            sender.send(msg);
+            log.info("✅ Email sent to={}", to);
+
+        } catch (Exception e) {
+            log.error("Failed to send email to={} subject='{}': {}", to, subject, e.getMessage(), e);
+        }
     }
 
     private String buildAuctionFinishText(Auction auction, Bid winnerBid) {

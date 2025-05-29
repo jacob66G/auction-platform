@@ -73,4 +73,20 @@ public class Auction {
         this.bids.add(bid);
         bid.setAuction(this);
     }
+
+    @Override
+    public String toString() {
+        return "Auction{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", startingPrice=" + startingPrice +
+                ", startTime=" + startTime +
+                ", endTime=" + endTime +
+                ", auctionStatus=" + auctionStatus +
+                ", actualPrice=" + actualPrice +
+                ", user=" + user.getUsername() +
+                ", category=" + category.getName() +
+                '}';
+    }
 }
