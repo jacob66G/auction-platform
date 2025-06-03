@@ -1,6 +1,6 @@
 package com.example.auction_api.entity;
 
-import com.example.auction_api.dto.enums.AuctionStatus;
+import com.example.auction_api.enums.AuctionStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -52,7 +52,7 @@ public class Auction {
     @OneToMany(mappedBy = "auction", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AuctionImg> auctionImgs;
 
-    @OneToMany(mappedBy = "auction", cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH}, orphanRemoval = true)
+    @OneToMany(mappedBy = "auction", cascade = {CascadeType.ALL}, orphanRemoval = true)
     @OrderBy("amount desc")
     private List<Bid> bids;
 
@@ -63,6 +63,13 @@ public class Auction {
 
         this.auctionImgs.add(auctionImg);
         auctionImg.setAuction(this);
+    }
+
+    public void removeAuctionImg(AuctionImg auctionImg) {
+        if(this.auctionImgs != null) {
+            this.auctionImgs.remove(auctionImg);
+            auctionImg.setAuction(null);
+        }
     }
 
     public void addBid(Bid bid) {

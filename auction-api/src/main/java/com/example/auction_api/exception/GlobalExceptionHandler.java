@@ -8,6 +8,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import javax.naming.AuthenticationException;
 import java.time.LocalDateTime;
@@ -28,7 +29,7 @@ public class GlobalExceptionHandler {
 
         ErrorResponse response = new ErrorResponse(
                 400,
-                "Validation failed for the request.",
+                "Validation failed for the request",
                 errors.toString(),
                 LocalDateTime.now()
         );
@@ -38,11 +39,24 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler({ValidationImagesException.class, MaxUploadSizeExceededException.class})
+    public ResponseEntity<ErrorResponse> handleValidationException(ValidationImagesException ex) {
+        ErrorResponse response = new ErrorResponse(
+                400,
+                ex.getMessage(),
+                "Validation failed for the request.",
+                LocalDateTime.now()
+        );
+
+        log.warn("Bad request exception - {}: {}", ex.getClass().getSimpleName(), ex.getMessage());
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler({
             InvalidPasswordException.class,
             InvalidAuctionDurationException.class,
             InsufficientAmountException.class,
-            InvalidAuctionStatusException.class,
             InvalidBidderException.class
     })
     public ResponseEntity<ErrorResponse> handleBadRequest(RuntimeException ex) {
@@ -62,7 +76,6 @@ public class GlobalExceptionHandler {
             DuplicateNameException.class,
             BidTooLowException.class,
             AuctionNotEditableException.class,
-            AuctionNotCancellableException.class,
             ActionNotActiveException.class,
             EmailAlreadyExistsException.class,
             UsernameAlreadyExistsException.class,

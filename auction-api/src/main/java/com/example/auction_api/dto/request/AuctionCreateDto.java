@@ -6,7 +6,7 @@ import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record AuctionRequest(
+public record AuctionCreateDto(
         @NotBlank(message = "Title must not be blank")
         @Size(min = 5, max = 30, message = "Title must be between 5 and 30 characters")
         String title,

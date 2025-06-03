@@ -1,11 +1,14 @@
 package com.example.auction_api.service;
 
-import com.example.auction_api.dto.request.AuctionRequest;
+import com.example.auction_api.dto.request.AuctionCancelRequest;
+import com.example.auction_api.dto.request.AuctionCreateDto;
 import com.example.auction_api.dto.request.AuctionSearchCriteria;
+import com.example.auction_api.dto.response.AuctionCreateResponse;
 import com.example.auction_api.dto.response.AuctionDetailsResponse;
 import com.example.auction_api.dto.response.AuctionResponse;
 import com.example.auction_api.dto.response.MessageResponse;
 import com.example.auction_api.entity.Auction;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -16,13 +19,9 @@ public interface AuctionService {
     AuctionDetailsResponse getAuctionById(Long id);
     Auction getAuctionEntityById(Long id);
     List<Auction> getAuctionsByCategory(Long categoryId);
-    AuctionResponse createAuction(AuctionRequest auction);
-    AuctionResponse updateAuction(Long id, AuctionRequest auction);
+    AuctionCreateResponse createAuction(AuctionCreateDto auction, MultipartFile[] images);
+//    AuctionResponse updateAuction(Long id, AuctionCreateDto auction, MultipartFile[] images);
     void deleteAuction(Long id);
-    MessageResponse cancelAuction(Long id);
-    void approveDeletionAuction(Long id);
-    void rejectDeletionAuction(Long id);
-    void approveSaveAuction(Long id);
-    void rejectSaveAuction(Long id);
+    MessageResponse cancelAuction(Long auctionId, AuctionCancelRequest cancelRequest);
     void endOfAuction(Auction auction);
 }

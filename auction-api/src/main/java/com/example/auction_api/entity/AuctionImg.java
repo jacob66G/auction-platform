@@ -18,7 +18,7 @@ public class AuctionImg {
 
     private String url;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne()
     @JoinColumn(name = "auction_id")
     private Auction auction;
 }

@@ -1,17 +1,18 @@
 package com.example.auction_api.service.Impl;
 
 import com.example.auction_api.dao.AuctionDao;
-import com.example.auction_api.dto.request.AuctionRequest;
+import com.example.auction_api.dto.request.AuctionCancelRequest;
+import com.example.auction_api.dto.request.AuctionCreateDto;
 import com.example.auction_api.dto.request.AuctionSearchCriteria;
+import com.example.auction_api.dto.response.AuctionCreateResponse;
 import com.example.auction_api.dto.response.AuctionDetailsResponse;
 import com.example.auction_api.dto.response.AuctionResponse;
 import com.example.auction_api.dto.response.MessageResponse;
-import com.example.auction_api.entity.Auction;
-import com.example.auction_api.dto.enums.AuctionStatus;
-import com.example.auction_api.entity.Bid;
-import com.example.auction_api.entity.Category;
-import com.example.auction_api.entity.User;
-import com.example.auction_api.event.*;
+import com.example.auction_api.entity.*;
+import com.example.auction_api.enums.AuctionStatus;
+import com.example.auction_api.enums.RequestType;
+import com.example.auction_api.event.auction.AuctionEndEvent;
+import com.example.auction_api.event.auction.AuctionExpiredEvent;
 import com.example.auction_api.exception.*;
 import com.example.auction_api.mapper.AuctionMapper;
 import com.example.auction_api.service.*;
@@ -19,44 +20,56 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 @Service
 public class AuctionServiceImpl implements AuctionService {
 
     private final AuctionDao auctionDao;
     private final CategoryService categoryService;
+    private final AuctionRequestService auctionRequestService;
     private final AuctionMapper mapper;
     private final AuthenticationServiceImpl authService;
-    private final UserService userService;
     private final BidService bidService;
-    private final ApplicationEventPublisher applicationEventPublisher;
+    private final ImageStorageService imgStorageService;
+    private final ApplicationEventPublisher eventPublisher;
+
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+            "image/jpeg",
+            "image/png"
+    );
 
     public AuctionServiceImpl(
             AuctionDao auctionDao,
             CategoryService categoryService,
+            AuctionRequestService auctionRequestService,
             AuctionMapper mapper,
             AuthenticationServiceImpl authService,
-            UserService userService, BidService bidService,
-            AuctionEventListener auctionEventListener,
-            ApplicationEventPublisher applicationEventPublisher) {
+            BidService bidService,
+            ImageStorageService imgStorageService,
+            ApplicationEventPublisher eventPublisher
+    ) {
         this.auctionDao = auctionDao;
         this.categoryService = categoryService;
+        this.auctionRequestService = auctionRequestService;
         this.mapper = mapper;
-        this.authService = authService;
-        this.userService = userService;
+        this.authService = authService;;
         this.bidService = bidService;
-        this.applicationEventPublisher = applicationEventPublisher;
+        this.imgStorageService = imgStorageService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
     public List<AuctionResponse> getActiveAuctionsByCriteria(AuctionSearchCriteria criteria) {
+        if(criteria.getSize() < 0) criteria.setSize(10);
+        if(criteria.getPage() < 0) criteria.setPage(0);
+
         return auctionDao.findByCriteria(criteria).stream().map(mapper::toResponse).toList();
     }
 
@@ -80,90 +93,6 @@ public class AuctionServiceImpl implements AuctionService {
     }
 
     @Override
-    @Transactional
-    public AuctionResponse createAuction(AuctionRequest auction) {
-        User user = authService.getAuthenticatedUser();
-
-        validateTitle(auction.title(), null);
-        validateStartTimeAndEndTime(auction.startTime(), auction.endTime());
-        Category category = categoryService.getCategoryEntityById(auction.categoryId());
-
-        Auction newAuction = mapper.toEntity(auction);
-        newAuction.setCategory(category);
-        newAuction.setAuctionStatus(AuctionStatus.PENDING_APPROVAL);
-        newAuction.setActualPrice(auction.startingPrice());
-
-        user.addAuction(newAuction);
-
-        //load images to s3
-
-        return mapper.toResponse(auctionDao.save(newAuction));
-    }
-
-    @Override
-    @Transactional
-    public AuctionResponse updateAuction(Long id, AuctionRequest auction) {
-        User user = authService.getAuthenticatedUser();
-
-        Auction existingAuction = getAuctionEntityById(id);
-        validateOwner(existingAuction, user);
-
-        if(!existingAuction.getAuctionStatus().equals(AuctionStatus.ACTIVE)) {
-            throw new AuctionNotEditableException(id, "is not active");
-        }
-
-        if(!existingAuction.getBids().isEmpty()) {
-            throw new AuctionNotEditableException(id, "has already been bidded");
-        }
-
-        validateStartTimeAndEndTime(auction.startTime(), auction.endTime());
-        validateTitle(auction.title(), id);
-        Category category = categoryService.getCategoryEntityById(auction.categoryId());
-
-        existingAuction.setTitle(auction.title());
-        existingAuction.setDescription(auction.description());
-        existingAuction.setCategory(category);
-        existingAuction.setStartingPrice(auction.startingPrice());
-        existingAuction.setEndTime(auction.endTime().truncatedTo(ChronoUnit.MINUTES));
-        existingAuction.setAuctionStatus(AuctionStatus.PENDING_APPROVAL);
-
-        return mapper.toResponse(auctionDao.update(existingAuction));
-    }
-
-    @Override
-    @Transactional
-    public void deleteAuction(Long id) {
-        getAuctionEntityById(id);
-        auctionDao.deleteById(id);
-    }
-
-    @Override
-    @Transactional
-    public MessageResponse cancelAuction(Long auctionId) {
-        User user = authService.getAuthenticatedUser();
-        Auction auction = getAuctionEntityById(auctionId);
-
-        validateOwner(auction, user);
-
-        if(!auction.getAuctionStatus().equals(AuctionStatus.ACTIVE)) {
-            throw new AuctionNotCancellableException(auctionId, "auction is not active");
-        }
-
-        if(auction.getBids().isEmpty()) {
-            auction.setAuctionStatus(AuctionStatus.CANCELLED);
-            auctionDao.update(auction);
-
-            return new MessageResponse("Auction cancellation successfully approved.");
-
-        } else {
-            auction.setAuctionStatus(AuctionStatus.PENDING_CANCELLED);
-            auctionDao.update(auction);
-
-            return new MessageResponse("Auction cancellation has been forwarded for approval.");
-        }
-    }
-
-    @Override
     public Auction getAuctionEntityById(Long id) {
         return auctionDao.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(Auction.class.getSimpleName(), id));
@@ -176,65 +105,94 @@ public class AuctionServiceImpl implements AuctionService {
 
     @Override
     @Transactional
-    public void approveDeletionAuction(Long auctionId) {
-        Auction auction = getAuctionEntityById(auctionId);
+    public AuctionCreateResponse createAuction(AuctionCreateDto auction, MultipartFile[] images) {
+        User user = authService.getAuthenticatedUser();
 
-        if(!auction.getAuctionStatus().equals(AuctionStatus.PENDING_CANCELLED)) {
-            throw new InvalidAuctionStatusException(auctionId, auction.getAuctionStatus(), AuctionStatus.PENDING_CANCELLED);
-        }
+        validateImages(images);
+        validateTitle(auction.title(), null);
+        validateStartTimeAndEndTime(auction.startTime(), auction.endTime());
+        Category category = categoryService.getCategoryEntityById(auction.categoryId());
 
-        refundBidders(auction);
+        Auction newAuction = mapper.toEntity(auction);
+        newAuction.setCategory(category);
+        newAuction.setAuctionStatus(AuctionStatus.PENDING_APPROVAL);
+        newAuction.setActualPrice(auction.startingPrice());
+        user.addAuction(newAuction);
 
-        auction.setAuctionStatus(AuctionStatus.CANCELLED);
-        auctionDao.update(auction);
+        Auction savedAuction = auctionDao.save(newAuction);
 
-        applicationEventPublisher.publishEvent(new AuctionCancellationApprovalEvent(auction));
+        attachImagesToAuction(images, savedAuction);
+
+        auctionRequestService.createModerationRequest(savedAuction, RequestType.SAVE, null);
+
+        String message = "Your auction has been submitted for approval.\nYou will be notified by email once it's reviewed.";
+        return mapper.toCreateResponse(savedAuction, message);
     }
+
+
+//    @Override
+//    @Transactional
+//    public AuctionResponse updateAuction(Long id, AuctionCreateDto auction, MultipartFile[] images) {
+//        User user = authService.getAuthenticatedUser();
+//
+//        Auction existingAuction = getAuctionEntityById(id);
+//
+//        validateOwner(existingAuction, user);
+//        validateAuctionCanBeEdited(existingAuction);
+//        validateImages(images);
+//        validateStartTimeAndEndTime(auction.startTime(), auction.endTime());
+//        validateTitle(auction.title(), id);
+//        Category category = categoryService.getCategoryEntityById(auction.categoryId());
+//
+//        existingAuction.setTitle(auction.title());
+//        existingAuction.setDescription(auction.description());
+//        existingAuction.setCategory(category);
+//        existingAuction.setStartingPrice(auction.startingPrice());
+//        existingAuction.setEndTime(auction.endTime().truncatedTo(ChronoUnit.MINUTES));
+//
+//        attachImagesToAuction(images, existingAuction);
+//
+//        auctionRequestService.createModerationRequest(existingAuction, RequestType.EDIT, null);
+//
+//        return mapper.toResponse(auctionDao.update(existingAuction));
+//    }
+
 
     @Override
     @Transactional
-    public void rejectDeletionAuction(Long auctionId) {
+    public MessageResponse cancelAuction(Long auctionId, AuctionCancelRequest cancelRequest) {
+        User user = authService.getAuthenticatedUser();
         Auction auction = getAuctionEntityById(auctionId);
 
-        if(!auction.getAuctionStatus().equals(AuctionStatus.PENDING_CANCELLED)) {
-            throw new InvalidAuctionStatusException(auctionId, auction.getAuctionStatus(), AuctionStatus.PENDING_CANCELLED);
+        validateOwner(auction, user);
+        validateAuctionCanBeCancelled(auction);
+
+        if(auction.getBids().isEmpty()) {
+            auction.setAuctionStatus(AuctionStatus.CANCELLED);
+            auctionDao.update(auction);
+
+            return new MessageResponse("Your auction cancellation request has been successfully approved.");
+
+        } else {
+            auctionRequestService.createModerationRequest(auction, RequestType.CANCEL, cancelRequest.reason());
+            return new MessageResponse("Your request to cancel the auction has been submitted for approval.\n" +
+                    "You will be notified by email once it's reviewed.");
         }
-
-        auction.setAuctionStatus(AuctionStatus.ACTIVE);
-        auctionDao.update(auction);
-
-        applicationEventPublisher.publishEvent(new AuctionCancellationRejectionEvent(auction));
     }
+
 
     @Override
     @Transactional
-    public void approveSaveAuction(Long auctionId) {
-        Auction auction = getAuctionEntityById(auctionId);
+    public void deleteAuction(Long id) {
+        Auction auction = getAuctionEntityById(id);
 
-        if(!auction.getAuctionStatus().equals(AuctionStatus.PENDING_APPROVAL)) {
-            throw new InvalidAuctionStatusException(auctionId, auction.getAuctionStatus(), AuctionStatus.PENDING_APPROVAL);
+        for (AuctionImg img : auction.getAuctionImgs()) {
+            imgStorageService.deleteAuctionImage(img.getUrl());
         }
 
-        auction.setAuctionStatus(AuctionStatus.ACTIVE);
-        auctionDao.update(auction);
-
-        applicationEventPublisher.publishEvent(new AuctionApprovalEvent(auction));
+        auctionDao.deleteById(id);
     }
 
-    @Override
-    @Transactional
-    public void rejectSaveAuction(Long auctionId) {
-        Auction auction = getAuctionEntityById(auctionId);
-
-        if(!auction.getAuctionStatus().equals(AuctionStatus.PENDING_APPROVAL)) {
-            throw new InvalidAuctionStatusException(auctionId, auction.getAuctionStatus(), AuctionStatus.PENDING_APPROVAL);
-        }
-
-        auction.setAuctionStatus(AuctionStatus.REJECTED);
-        auctionDao.update(auction);
-
-        applicationEventPublisher.publishEvent(new AuctionRejectEvent(auction));
-    }
 
     @Override
     @Transactional
@@ -242,13 +200,58 @@ public class AuctionServiceImpl implements AuctionService {
         if(auction.getEndTime().isBefore(LocalDateTime.now()) && auction.getAuctionStatus().equals(AuctionStatus.ACTIVE)) {
             if(auction.getBids().isEmpty()) {
                 auction.setAuctionStatus(AuctionStatus.EXPIRED);
+                eventPublisher.publishEvent(new AuctionExpiredEvent(auction.getUser().getEmail(), auction.getTitle()));
+
             } else {
                 auction.setAuctionStatus(AuctionStatus.FINISHED);
 
                 Bid winnerBid = bidService.getWinnerBid(auction.getId());
-                applicationEventPublisher.publishEvent(new AuctionEndEvent(auction, winnerBid));
+                eventPublisher.publishEvent(new AuctionEndEvent(
+                        auction.getUser().getEmail(),
+                        auction.getTitle(),
+                        winnerBid.getUser().getUsername(),
+                        winnerBid.getAmount(),
+                        winnerBid.getUser().getEmail()
+                    )
+                );
             }
             auctionDao.update(auction);
+        }
+    }
+
+    private void attachImagesToAuction(MultipartFile[] images, Auction auction) {
+        if(images != null) {
+            for(MultipartFile image : images) {
+                String url = imgStorageService.uploadAuctionImage(auction.getId(), image);
+                AuctionImg img = new AuctionImg();
+                img.setUrl(url);
+
+                auction.addAuctionImg(img);
+            }
+        }
+    }
+
+    private void validateAuctionCanBeEdited(Auction auction) {
+        if(!auction.getAuctionStatus().equals(AuctionStatus.ACTIVE)) {
+            throw new AuctionNotEditableException(auction.getId(), "is not active");
+        }
+
+        if(!auction.getBids().isEmpty()) {
+            throw new AuctionNotEditableException(auction.getId(), "has already been bidded");
+        }
+    }
+
+    private void validateImages(MultipartFile[] images) {
+        if(images != null) {
+            if(images.length > 5) {
+                throw new ValidationImagesException("Only 5 images upload is allowed");
+            }
+
+            for(MultipartFile file : images) {
+                if(!ALLOWED_CONTENT_TYPES.contains(file.getContentType())) {
+                    throw new ValidationImagesException("Not allowed content type! Only jpg/png is allowed");
+                }
+            }
         }
     }
 
@@ -278,17 +281,9 @@ public class AuctionServiceImpl implements AuctionService {
         }
     }
 
-    private void refundBidders(Auction auction) {
-        if(!auction.getBids().isEmpty()) {
-            for(Bid bid : auction.getBids()) {
-                User user = bid.getUser();
-                BigDecimal amount = bid.getAmount();
-
-                user.setBalance(user.getBalance().add(amount));
-                userService.refund(bid.getAmount(), user);
-
-                bidService.deleteBid(bid.getId());
-            }
+    private void validateAuctionCanBeCancelled(Auction auction) {
+        if(!auction.getAuctionStatus().equals(AuctionStatus.ACTIVE)) {
+            throw new AuctionNotEditableException(auction.getId(), "auction is not active");
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.example.auction_api.event;
+package com.example.auction_api.event.user;
 
 import com.example.auction_api.service.EmailSenderService;
 import org.springframework.context.event.EventListener;
@@ -15,6 +15,6 @@ public class UserEventListener {
 
     @EventListener
     public void handleUserRegistrationEvent(UserRegistrationEvent event) {
-        senderService.sendUserRegistrationInfo(event.user());
+        senderService.sendUserRegistrationInfo(event.getUserEmail(), event.getUsername());
     }
 }

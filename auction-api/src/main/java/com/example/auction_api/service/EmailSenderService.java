@@ -1,17 +1,16 @@
 package com.example.auction_api.service;
 
-import com.example.auction_api.entity.Auction;
-import com.example.auction_api.entity.Bid;
-import com.example.auction_api.entity.User;
+
+import java.math.BigDecimal;
 
 public interface EmailSenderService {
-    void sendAuctionWonToWinner(Auction auction, Bid winnerBid);
-    void sendAuctionEndedToOwner(Auction auction, Bid winnerBid);
-    void sendAuctionExpiredToOwner(Auction auction);
-    void sendAuctionApprovalToOwner(Auction auction);
-    void sendAuctionRejectionToOwner(Auction auction);
-    void sendAuctionCancellationApprovalToOwner(Auction auction);
-    void sendAuctionCancellationRejectionToOwner(Auction auction);
-    void sendAuctionCancellationToBidders(Auction auction);
-    void sendUserRegistrationInfo(User user);
+    void sendAuctionWonToWinner(String userEmail, String auctionTitle, String winnerName, BigDecimal winnerBidAmount);
+    void sendAuctionEndedToOwner(String userEmail, String auctionTitle, String winnerName, BigDecimal winnerBidAmount);
+    void sendAuctionExpiredToOwner(String userEmail, String auctionTitle);
+    void sendAuctionApprovalToOwner(String userEmail, String auctionTitle);
+    void sendAuctionRejectToOwner(String userEmail, String auctionTitle, String comment);
+    void sendAuctionCancelApprovalToOwner(String userEmail, String auctionTitle, String comment);
+    void sendAuctionCancelRejectionToOwner(String userEmail, String auctionTitle, String comment);
+    void sendUserRegistrationInfo(String userEmail, String username);
+    void sendRefundInfoToBidder(String userEmail, String auctionTitle, BigDecimal amount);
 }

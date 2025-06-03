@@ -4,7 +4,7 @@ import com.example.auction_api.dao.BidDao;
 import com.example.auction_api.dto.request.BidRequest;
 import com.example.auction_api.dto.response.BidResponse;
 import com.example.auction_api.entity.Auction;
-import com.example.auction_api.dto.enums.AuctionStatus;
+import com.example.auction_api.enums.AuctionStatus;
 import com.example.auction_api.entity.Bid;
 import com.example.auction_api.entity.User;
 import com.example.auction_api.exception.*;
@@ -12,13 +12,16 @@ import com.example.auction_api.mapper.BidMapper;
 import com.example.auction_api.service.AuctionService;
 import com.example.auction_api.service.BidService;
 import com.example.auction_api.service.UserService;
+import org.hibernate.event.service.spi.EventActionWithParameter;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class BidServiceImpl implements BidService {
@@ -64,12 +67,6 @@ public class BidServiceImpl implements BidService {
     }
 
     @Override
-    public Bid getBidEntityById(Long id) {
-        return bidDao.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(Bid.class.getSimpleName(), id));
-    }
-
-    @Override
     @Transactional
     public BidResponse createBid(BidRequest bid) {
         User user = authService.getAuthenticatedUser();
@@ -98,8 +95,31 @@ public class BidServiceImpl implements BidService {
     @Override
     @Transactional
     public void deleteBid(Long id) {
-        getBidEntityById(id);
+        bidDao.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(Bid.class.getSimpleName(), id));
+
         bidDao.deleteById(id);
+    }
+
+    @Override
+    public void refundBidders(Auction auction) {
+        if(!auction.getBids().isEmpty()) {
+            Map<User, BigDecimal> refundMap = new HashMap<>();
+
+            for(Bid bid : auction.getBids()) {
+                refundMap.merge(
+                        bid.getUser(),
+                        bid.getAmount(),
+                        BigDecimal::add
+                );
+            }
+
+            for (Bid bid : auction.getBids()) {
+                bidDao.deleteById(bid.getId());
+            }
+
+            refundMap.forEach((user, amount) -> userService.refund(user, amount, auction));
+        }
     }
 
     @Override

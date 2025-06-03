@@ -10,7 +10,7 @@ public record BidRequest(
         @Min(value = 0, message = "Bid price must be at least 0")
         BigDecimal amount,
 
-        @NotNull(message = "Auction ID must not be null")
+        @NotNull(message = "Auction id must not be null")
         Long auctionId
 ) {
 }

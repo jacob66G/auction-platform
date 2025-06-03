@@ -1,6 +1,7 @@
 package com.example.auction_api.mapper;
 
-import com.example.auction_api.dto.request.AuctionRequest;
+import com.example.auction_api.dto.request.AuctionCreateDto;
+import com.example.auction_api.dto.response.AuctionCreateResponse;
 import com.example.auction_api.dto.response.AuctionDetailsResponse;
 import com.example.auction_api.dto.response.AuctionResponse;
 import com.example.auction_api.dto.response.BidResponse;
@@ -63,7 +64,29 @@ public class AuctionMapper {
         );
     }
 
-    public Auction toEntity(AuctionRequest request) {
+    public AuctionCreateResponse toCreateResponse(Auction auction, String message) {
+        List<String> auctionImgsUrls = auction.getAuctionImgs() != null
+                ? auction.getAuctionImgs().stream()
+                .map(AuctionImg::getUrl)
+                .collect(Collectors.toList())
+                : Collections.emptyList();
+
+        return new AuctionCreateResponse(
+                auction.getId(),
+                auction.getTitle(),
+                auction.getDescription(),
+                auction.getStartingPrice().doubleValue(),
+                auction.getStartTime(),
+                auction.getEndTime(),
+                auction.getAuctionStatus().name(),
+                auction.getUser().getUsername(),
+                auction.getCategory().getName(),
+                auctionImgsUrls,
+                message
+        );
+    }
+
+    public Auction toEntity(AuctionCreateDto request) {
         Auction auction = new Auction();
         auction.setTitle(request.title());
         auction.setDescription(request.description());
@@ -73,4 +96,5 @@ public class AuctionMapper {
 
         return auction;
     }
+
 }

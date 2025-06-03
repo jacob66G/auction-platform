@@ -1,6 +1,6 @@
 package com.example.auction_api.security;
 
-import com.example.auction_api.dto.enums.UserRole;
+import com.example.auction_api.enums.UserRole;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -29,14 +29,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/auctions/search", "/api/auctions/{id}").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auctions/search/my").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/auctions").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/auctions/{id}/cancel").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/auctions/{id}").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/auctions/search/admin").hasRole(UserRole.ADMIN.name())
                         .requestMatchers(HttpMethod.DELETE, "/api/auctions/{id}").hasRole(UserRole.ADMIN.name())
-                        .requestMatchers(HttpMethod.POST, "/api/auctions/{id}/cancel").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/auctions/{id}/approval").hasAnyRole(UserRole.MODERATOR.name(), UserRole.ADMIN.name())
-                        .requestMatchers(HttpMethod.POST, "/api/auctions/{id}/rejection").hasAnyRole(UserRole.MODERATOR.name(), UserRole.ADMIN.name())
-                        .requestMatchers(HttpMethod.POST, "/api/auctions/{id}/cancellation-approval").hasAnyRole(UserRole.MODERATOR.name(), UserRole.ADMIN.name())
-                        .requestMatchers(HttpMethod.POST, "/api/auctions/{id}/cancellation-rejection").hasAnyRole(UserRole.MODERATOR.name(), UserRole.ADMIN.name())
+                        .requestMatchers("/api/requests/**").hasAnyRole(UserRole.MODERATOR.name(), UserRole.ADMIN.name())
                         .requestMatchers(HttpMethod.GET,"/api/categories").permitAll()
                         .requestMatchers("/api/categories/**").hasRole(UserRole.ADMIN.name())
                         .requestMatchers(HttpMethod.GET, "/api/bids/my").authenticated()

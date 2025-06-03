@@ -1,6 +1,5 @@
 package com.example.auction_api.dto.request;
 
-
 import lombok.Getter;
 import lombok.Setter;
 

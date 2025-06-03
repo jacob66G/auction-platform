@@ -1,6 +1,6 @@
 package com.example.auction_api.dto.response;
 
-import com.example.auction_api.dto.enums.UserRole;
+import com.example.auction_api.enums.UserRole;
 
 import java.math.BigDecimal;
 

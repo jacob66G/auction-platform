@@ -1,6 +1,6 @@
 package com.example.auction_api.dao;
 
-import com.example.auction_api.dto.enums.UserRole;
+import com.example.auction_api.enums.UserRole;
 import com.example.auction_api.entity.User;
 
 import java.util.List;

@@ -1,19 +1,22 @@
 package com.example.auction_api.service.Impl;
 
 import com.example.auction_api.dao.UserDao;
-import com.example.auction_api.dto.enums.UserRole;
+import com.example.auction_api.entity.Auction;
+import com.example.auction_api.enums.UserRole;
 import com.example.auction_api.dto.request.ChangePasswordRequest;
 import com.example.auction_api.dto.request.DepositRequest;
 import com.example.auction_api.dto.request.UserRegisterRequest;
 import com.example.auction_api.dto.request.UserRequest;
 import com.example.auction_api.dto.response.UserResponse;
 import com.example.auction_api.entity.User;
+import com.example.auction_api.event.auction.AuctionRefundEvent;
 import com.example.auction_api.exception.EmailAlreadyExistsException;
 import com.example.auction_api.exception.InsufficientAmountException;
 import com.example.auction_api.exception.InvalidPasswordException;
 import com.example.auction_api.exception.UsernameAlreadyExistsException;
 import com.example.auction_api.mapper.UserMapper;
 import com.example.auction_api.service.UserService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,17 +31,19 @@ public class UserServiceImpl implements UserService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserMapper mapper;
     private final AuthenticationServiceImpl authService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public UserServiceImpl(
             UserDao userDao,
             BCryptPasswordEncoder passwordEncoder,
             UserMapper mapper,
-            AuthenticationServiceImpl authService
+            AuthenticationServiceImpl authService, ApplicationEventPublisher eventPublisher
     ) {
         this.userDao = userDao;
         this.passwordEncoder = passwordEncoder;
         this.mapper = mapper;
         this.authService = authService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -74,9 +79,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void refund(BigDecimal amount, User user) {
+    public void refund(User user, BigDecimal amount, Auction auction) {
         user.setBalance(user.getBalance().add(amount));
         userDao.update(user);
+
+        eventPublisher.publishEvent(new AuctionRefundEvent(user.getEmail(), auction.getTitle(), amount));
     }
 
     @Override

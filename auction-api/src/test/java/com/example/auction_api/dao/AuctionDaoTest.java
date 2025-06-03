@@ -3,7 +3,7 @@ package com.example.auction_api.dao;
 import com.example.auction_api.dao.impl.AuctionDaoImpl;
 import com.example.auction_api.dao.impl.CategoryDaoImpl;
 import com.example.auction_api.dao.impl.UserDaoImpl;
-import com.example.auction_api.dto.enums.AuctionStatus;
+import com.example.auction_api.enums.AuctionStatus;
 import com.example.auction_api.dto.request.AuctionSearchCriteria;
 import com.example.auction_api.entity.Auction;
 import com.example.auction_api.entity.Category;

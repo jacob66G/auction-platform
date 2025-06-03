@@ -1,7 +1,9 @@
 package com.example.auction_api.controller;
 
-import com.example.auction_api.dto.enums.AuctionStatus;
-import com.example.auction_api.dto.request.AuctionRequest;
+import com.example.auction_api.dto.request.AuctionCancelRequest;
+import com.example.auction_api.dto.request.AuctionCreateDto;
+import com.example.auction_api.dto.response.AuctionCreateResponse;
+import com.example.auction_api.enums.AuctionStatus;
 import com.example.auction_api.dto.request.AuctionSearchCriteria;
 import com.example.auction_api.dto.response.AuctionDetailsResponse;
 import com.example.auction_api.dto.response.AuctionResponse;
@@ -9,8 +11,10 @@ import com.example.auction_api.dto.response.MessageResponse;
 import com.example.auction_api.service.AuctionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -101,15 +105,22 @@ public class AuctionController {
         return ResponseEntity.ok().body(auctionService.getAuctionById(id));
     }
 
-    @PostMapping
-    public ResponseEntity<AuctionResponse> createAuction(@Valid @RequestBody AuctionRequest auction) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(auctionService.createAuction(auction));
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AuctionCreateResponse> createAuction(
+            @Valid @RequestPart("auction") AuctionCreateDto auction,
+            @RequestPart(value= "images", required = false) MultipartFile[] images
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(auctionService.createAuction(auction, images));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<AuctionResponse> updateAuction(@PathVariable Long id, @Valid @RequestBody AuctionRequest auction) {
-        return ResponseEntity.ok().body(auctionService.updateAuction(id, auction));
-    }
+//    @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<AuctionResponse> updateAuction(
+//            @PathVariable Long id,
+//            @Valid @RequestPart AuctionCreateDto auction,
+//            @RequestPart(value= "images", required = false) MultipartFile[] images)
+//    {
+//        return ResponseEntity.ok().body(auctionService.updateAuction(id, auction, images));
+//    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<MessageResponse> deleteAuction(@PathVariable Long id) {
@@ -118,31 +129,7 @@ public class AuctionController {
     }
 
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<MessageResponse> cancelAuction(@PathVariable Long id) {
-        return ResponseEntity.ok().body(auctionService.cancelAuction(id));
-    }
-
-    @PostMapping("/{id}/approval")
-    public ResponseEntity<MessageResponse> approveAuction(@PathVariable Long id) {
-        auctionService.approveSaveAuction(id);
-        return ResponseEntity.ok().body(new MessageResponse("Auction successfully approved."));
-    }
-
-    @PostMapping("/{id}/rejection")
-    public ResponseEntity<MessageResponse> rejectAuction(@PathVariable Long id) {
-        auctionService.rejectSaveAuction(id);
-        return ResponseEntity.ok().body(new MessageResponse("Auction successfully rejected."));
-    }
-
-    @PostMapping("/{id}/cancellation-approval")
-    public ResponseEntity<MessageResponse> approveAuctionCancellation(@PathVariable Long id) {
-        auctionService.approveDeletionAuction(id);
-        return ResponseEntity.ok().body(new MessageResponse("Auction cancellation successfully approved."));
-    }
-
-    @PostMapping("/{id}/cancellation-rejection")
-    public ResponseEntity<MessageResponse> rejectAuctionCancellation(@PathVariable Long id) {
-        auctionService.rejectDeletionAuction(id);
-        return ResponseEntity.ok().body(new MessageResponse("Auction cancellation successfully rejected."));
+    public ResponseEntity<MessageResponse> cancelAuction(@PathVariable Long id, @Valid @RequestBody AuctionCancelRequest request) {
+        return ResponseEntity.ok().body(auctionService.cancelAuction(id, request));
     }
 }

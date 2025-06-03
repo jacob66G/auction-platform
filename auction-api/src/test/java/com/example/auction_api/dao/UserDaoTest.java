@@ -1,7 +1,7 @@
 package com.example.auction_api.dao;
 
 import com.example.auction_api.dao.impl.UserDaoImpl;
-import com.example.auction_api.dto.enums.UserRole;
+import com.example.auction_api.enums.UserRole;
 import com.example.auction_api.entity.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,12 +10,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
 @Import(UserDaoImpl.class)

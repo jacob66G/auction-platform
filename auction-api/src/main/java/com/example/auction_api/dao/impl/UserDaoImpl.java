@@ -1,7 +1,7 @@
 package com.example.auction_api.dao.impl;
 
 import com.example.auction_api.dao.UserDao;
-import com.example.auction_api.dto.enums.UserRole;
+import com.example.auction_api.enums.UserRole;
 import com.example.auction_api.entity.User;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
