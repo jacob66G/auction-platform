@@ -1,0 +1,177 @@
+<div class="container mt-4">
+  <h2>Dodaj nową aukcję</h2>
+  
+  <!-- Alert messages -->
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+  
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+  </div>
+  
+  <!-- Auction Form -->
+  <div class="card">
+    <div class="card-body">
+      <form [formGroup]="auctionForm" (ngSubmit)="onSubmit()">
+        <div class="mb-3">
+          <label for="title" class="form-label">Tytuł aukcji</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            id="title" 
+            formControlName="title" 
+            [ngClass]="{'is-invalid': auctionForm.get('title')?.invalid && auctionForm.get('title')?.touched}"
+          >
+          <div class="invalid-feedback" *ngIf="auctionForm.get('title')?.errors?.['required'] && auctionForm.get('title')?.touched">
+            Tytuł aukcji jest wymagany.
+          </div>
+          <div class="invalid-feedback" *ngIf="auctionForm.get('title')?.errors?.['minlength'] && auctionForm.get('title')?.touched">
+            Tytuł aukcji musi mieć co najmniej 5 znaków.
+          </div>
+          <div class="invalid-feedback" *ngIf="auctionForm.get('title')?.errors?.['maxlength'] && auctionForm.get('title')?.touched">
+            Tytuł aukcji nie może przekraczać 30 znaków.
+          </div>
+        </div>
+        
+        <div class="mb-3">
+          <label for="description" class="form-label">Opis aukcji</label>
+          <textarea 
+            class="form-control" 
+            id="description" 
+            rows="5" 
+            formControlName="description" 
+            [ngClass]="{'is-invalid': auctionForm.get('description')?.invalid && auctionForm.get('description')?.touched}"
+          ></textarea>
+          <div class="invalid-feedback" *ngIf="auctionForm.get('description')?.errors?.['required'] && auctionForm.get('description')?.touched">
+            Opis aukcji jest wymagany.
+          </div>
+          <div class="invalid-feedback" *ngIf="auctionForm.get('description')?.errors?.['minlength'] && auctionForm.get('description')?.touched">
+            Opis aukcji musi mieć co najmniej 30 znaków.
+          </div>
+          <div class="invalid-feedback" *ngIf="auctionForm.get('description')?.errors?.['maxlength'] && auctionForm.get('description')?.touched">
+            Opis aukcji nie może przekraczać 255 znaków.
+          </div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="startingPrice" class="form-label">Cena wywoławcza</label>
+            <div class="input-group">
+              <span class="input-group-text">PLN</span>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="startingPrice" 
+                formControlName="startingPrice" 
+                [ngClass]="{'is-invalid': auctionForm.get('startingPrice')?.invalid && auctionForm.get('startingPrice')?.touched}"
+                min="0" 
+                step="0.01"
+              >
+              <div class="invalid-feedback" *ngIf="auctionForm.get('startingPrice')?.errors?.['required'] && auctionForm.get('startingPrice')?.touched">
+                Cena wywoławcza jest wymagana.
+              </div>
+              <div class="invalid-feedback" *ngIf="auctionForm.get('startingPrice')?.errors?.['min'] && auctionForm.get('startingPrice')?.touched">
+                Cena wywoławcza musi być większa lub równa 0.
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <label for="categoryId" class="form-label">Kategoria</label>
+            <select 
+              class="form-select" 
+              id="categoryId" 
+              formControlName="categoryId" 
+              [ngClass]="{'is-invalid': auctionForm.get('categoryId')?.invalid && auctionForm.get('categoryId')?.touched}"
+            >
+              <option value="" disabled>Wybierz kategorię</option>
+              <option *ngFor="let category of categories" [ngValue]="category.id">{{ category.name }}</option>
+            </select>
+            <div class="invalid-feedback" *ngIf="auctionForm.get('categoryId')?.errors?.['required'] && auctionForm.get('categoryId')?.touched">
+              Kategoria jest wymagana.
+            </div>
+          </div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="startTime" class="form-label">Data rozpoczęcia</label>
+            <input 
+              type="datetime-local" 
+              class="form-control" 
+              id="startTime" 
+              formControlName="startTime" 
+              [ngClass]="{'is-invalid': auctionForm.get('startTime')?.invalid && auctionForm.get('startTime')?.touched}"
+            >
+            <div class="invalid-feedback" *ngIf="auctionForm.get('startTime')?.errors?.['required'] && auctionForm.get('startTime')?.touched">
+              Data rozpoczęcia jest wymagana.
+            </div>
+          </div>
+          
+          <div class="col-md-6">
+            <label for="endTime" class="form-label">Data zakończenia</label>
+            <input 
+              type="datetime-local" 
+              class="form-control" 
+              id="endTime" 
+              formControlName="endTime" 
+              [ngClass]="{'is-invalid': auctionForm.get('endTime')?.invalid && auctionForm.get('endTime')?.touched}"
+            >
+            <div class="invalid-feedback" *ngIf="auctionForm.get('endTime')?.errors?.['required'] && auctionForm.get('endTime')?.touched">
+              Data zakończenia jest wymagana.
+            </div>
+            <div class="invalid-feedback" *ngIf="auctionForm.get('endTime')?.errors?.['endBeforeStart'] && auctionForm.get('endTime')?.touched">
+              Data zakończenia musi być późniejsza niż data rozpoczęcia.
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-4">
+          <label for="images" class="form-label">Zdjęcia (max. 5)</label>
+          <input 
+            type="file" 
+            class="form-control" 
+            id="images" 
+            (change)="onFileChange($event)" 
+            accept="image/*" 
+            multiple
+            [disabled]="selectedFiles.length >= 5"
+          >
+          <small class="form-text text-muted">
+            Możesz dodać maksymalnie 5 zdjęć. Dozwolone formaty: JPG, PNG, GIF.
+          </small>
+          
+          <div *ngIf="previewUrls.length > 0" class="mt-3">
+            <h6>Podgląd zdjęć:</h6>
+            <div class="d-flex flex-wrap gap-3">
+              <div *ngFor="let url of previewUrls; let i = index" class="position-relative">
+                <img [src]="url" alt="Preview" style="height: 100px; width: auto; object-fit: cover;">
+                <button 
+                  type="button" 
+                  class="btn btn-sm btn-danger position-absolute top-0 end-0" 
+                  (click)="removeFile(i)"
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="d-grid">
+          <button 
+            type="submit" 
+            class="btn btn-primary" 
+            [disabled]="auctionForm.invalid || isSubmitting"
+          >
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            Dodaj aukcję
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div> 

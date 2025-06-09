@@ -1,0 +1,47 @@
+<div class="bid-form">
+  <!-- Alert messages -->
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+  
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+  </div>
+  
+  <form [formGroup]="bidForm" (ngSubmit)="onSubmit()">
+    <div class="mb-3">
+      <label for="amount" class="form-label">Twoja oferta (PLN)</label>
+      <div class="input-group">
+        <span class="input-group-text">PLN</span>
+        <input 
+          type="number" 
+          class="form-control" 
+          id="amount" 
+          formControlName="amount" 
+          [ngClass]="{'is-invalid': bidForm.get('amount')?.invalid && bidForm.get('amount')?.touched}"
+          step="0.01"
+        >
+        <div class="invalid-feedback" *ngIf="bidForm.get('amount')?.errors?.['required'] && bidForm.get('amount')?.touched">
+          Kwota oferty jest wymagana.
+        </div>
+        <div class="invalid-feedback" *ngIf="bidForm.get('amount')?.errors?.['min'] && bidForm.get('amount')?.touched">
+          Oferta musi być wyższa niż {{ bidForm.get('amount')?.errors?.['min']?.min | number:'1.2-2' }} PLN.
+        </div>
+      </div>
+      <small class="form-text text-muted">
+        Minimalna oferta: {{ currentPrice * 1.01 | number:'1.2-2' }} PLN (1% więcej niż aktualna cena)
+      </small>
+    </div>
+    
+    <button 
+      type="submit" 
+      class="btn btn-primary" 
+      [disabled]="bidForm.invalid || isSubmitting"
+    >
+      <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+      Złóż ofertę
+    </button>
+  </form>
+</div> 

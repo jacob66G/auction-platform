@@ -1,0 +1,61 @@
+<div class="bid-list">
+  <h5 class="mb-3">Historia ofert</h5>
+  
+  <!-- Error message -->
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+  
+  <!-- Loading spinner -->
+  <div *ngIf="isLoading" class="text-center my-3">
+    <div class="spinner-border spinner-border-sm" role="status">
+      <span class="visually-hidden">Ładowanie...</span>
+    </div>
+    <span class="ms-2">Ładowanie ofert...</span>
+  </div>
+  
+  <!-- No bids message -->
+  <div *ngIf="!isLoading && (!bids || bids.length === 0)" class="alert alert-info">
+    Brak ofert dla tej aukcji.
+  </div>
+  
+  <!-- Debug info -->
+  <div *ngIf="debugMode">
+    <pre>auctionId: {{ auctionId }}</pre>
+    <pre>bids: {{ bids | json }}</pre>
+  </div>
+  
+  <!-- Bids table -->
+  <div class="table-responsive" *ngIf="!isLoading && bids && bids.length > 0">
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr>
+          <th>Użytkownik</th>
+          <th>Kwota</th>
+          <th>Data</th>
+          <th *ngIf="isAdmin">Akcje</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let bid of bids; let i = index" [ngClass]="{'highest-bid': i === 0}">
+          <td>
+            {{ bid.username }}
+            <span *ngIf="i === 0" class="badge bg-primary ms-1">Najwyższa</span>
+          </td>
+          <td>{{ bid.amount | plnCurrency }}</td>
+          <td>{{ bid.bidDate | date:'dd.MM.yyyy HH:mm:ss' }}</td>
+          <td *ngIf="isAdmin">
+            <button 
+              class="btn btn-sm btn-outline-danger" 
+              (click)="deleteBid(bid.id)" 
+              title="Usuń ofertę"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div> 

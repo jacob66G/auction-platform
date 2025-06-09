@@ -1,0 +1,215 @@
+<div class="container mt-4" *ngIf="auction">
+  <!-- Success message -->
+  <div *ngIf="successMessage" class="alert alert-success mb-4">
+    {{ successMessage }}
+    <button type="button" class="btn-close float-end" aria-label="Close" (click)="successMessage = ''"></button>
+  </div>
+  
+  <div class="row">
+    <!-- Left column - Auction images and details -->
+    <div class="col-md-8">
+      <!-- Auction images -->
+      <div class="card mb-4">
+        <div class="card-body p-0">
+          <div *ngIf="auction.auctionImgsUrls && auction.auctionImgsUrls.length > 0" class="auction-images">
+            <img [src]="auction.auctionImgsUrls[selectedImageIndex]" class="main-image img-fluid" alt="Zdjęcie aukcji">
+            
+            <div class="image-slider-container" *ngIf="auction.auctionImgsUrls.length > 1">
+              <div class="d-flex align-items-center">
+                <button type="button" class="slider-btn slider-btn-left me-2" (click)="scrollThumbnails('left')" [disabled]="isScrollLeftDisabled">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                
+                <div class="image-thumbnails flex-grow-1" #thumbnailsContainer id="thumbnails-container" (wheel)="onMouseWheel($event)">
+                  <div 
+                    *ngFor="let imgUrl of auction.auctionImgsUrls; let i = index" 
+                    class="thumbnail-container"
+                    [class.active]="selectedImageIndex === i"
+                    (click)="selectImage(i)"
+                  >
+                    <img [src]="imgUrl" alt="Miniatura">
+                  </div>
+                </div>
+                
+                <button type="button" class="slider-btn slider-btn-right ms-2" (click)="scrollThumbnails('right')" [disabled]="isScrollRightDisabled">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div *ngIf="!auction.auctionImgsUrls || auction.auctionImgsUrls.length === 0" class="no-image text-center p-5">
+            <i class="bi bi-image" style="font-size: 5rem;"></i>
+            <p class="mt-3">Brak zdjęć dla tej aukcji</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Auction details -->
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3 class="mb-0">{{ auction.title }}</h3>
+          <span class="badge" [ngClass]="{
+            'bg-success': auction.auctionStatus === 'ACTIVE',
+            'bg-danger': auction.auctionStatus === 'CANCELLED' || auction.auctionStatus === 'REJECTED',
+            'bg-warning': auction.auctionStatus === 'PENDING_APPROVAL',
+            'bg-secondary': auction.auctionStatus === 'FINISHED' || auction.auctionStatus === 'EXPIRED'
+          }">
+            {{ auction.auctionStatus }}
+          </span>
+        </div>
+        <div class="card-body">
+          <p class="mb-1"><strong>Kategoria:</strong> {{ auction.categoryName }}</p>
+          <p class="mb-1"><strong>Sprzedawca:</strong> {{ auction.username }}</p>
+          <p class="mb-1"><strong>Data rozpoczęcia:</strong> {{ auction.startTime | date:'dd.MM.yyyy HH:mm' }}</p>
+          <p class="mb-1"><strong>Data zakończenia:</strong> {{ auction.endTime | date:'dd.MM.yyyy HH:mm' }}</p>
+          <p class="mb-1"><strong>Pozostały czas:</strong> {{ getTimeRemaining() }}</p>
+          <p class="mb-3"><strong>Cena wywoławcza:</strong> {{ auction.startingPrice | plnCurrency }}</p>
+          
+          <h4>Opis aukcji</h4>
+          <p class="auction-description">{{ auction.description }}</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right column - Bidding and actions -->
+    <div class="col-md-4">
+      <!-- Current price and bidding -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h4 class="mb-0">Aktualna cena</h4>
+        </div>
+        <div class="card-body">
+          <h3 class="price mb-3">{{ auction.actualPrice | plnCurrency }}</h3>
+          
+          <!-- Bid form for active auctions -->
+          <div *ngIf="isAuctionActive() && isAuthenticated && !isOwner && isRegularUser">
+            <app-bid-form 
+              [auctionId]="auction.id" 
+              [minBidAmount]="auction.startingPrice" 
+              [currentPrice]="auction.actualPrice"
+              (bidPlaced)="onBidPlaced()"
+            ></app-bid-form>
+          </div>
+          
+          <div *ngIf="isAuctionActive() && !isAuthenticated" class="alert alert-info">
+            <p>Zaloguj się, aby złożyć ofertę.</p>
+            <a routerLink="/login" [queryParams]="{returnUrl: '/auctions/' + auction.id}" class="btn btn-primary">Zaloguj się</a>
+          </div>
+          
+          <div *ngIf="isAuctionActive() && isAuthenticated && isOwner" class="alert alert-info">
+            Nie możesz licytować własnej aukcji.
+          </div>
+          
+          <div *ngIf="isAuctionActive() && isAuthenticated && !isRegularUser && !isOwner" class="alert alert-info">
+            Moderatorzy nie mogą składać ofert.
+          </div>
+          
+          <div *ngIf="!isAuctionActive()" class="alert alert-secondary">
+            Aukcja nie jest aktywna, licytacja jest niedostępna.
+          </div>
+        </div>
+      </div>
+      
+      <!-- Admin and owner actions -->
+      <div class="card mb-4" *ngIf="isOwner || isAdmin">
+        <div class="card-header">
+          <h4 class="mb-0">Akcje</h4>
+        </div>
+        <div class="card-body">
+          <!-- Owner actions -->
+          <div *ngIf="isOwner && isAuctionActive()">
+            <button class="btn btn-warning w-100 mb-2" 
+              (click)="openCancelModal()" 
+              [disabled]="auction?.cancelRequestPending">
+              Anuluj aukcję
+            </button>
+            <div *ngIf="auction?.cancelRequestPending" class="alert alert-info mt-2">
+              <small>Twoja prośba o anulowanie aukcji jest w trakcie rozpatrywania.</small>
+            </div>
+            <div *ngIf="auction?.cancelRequestCount === 2 && !auction?.cancelRequestPending" class="alert alert-warning mt-2">
+              <small>Uwaga: To będzie Twoja ostatnia możliwość anulowania tej aukcji.</small>
+            </div>
+          </div>
+          
+          <!-- Admin actions -->
+          <div *ngIf="isAdmin">
+            <button class="btn btn-danger w-100" (click)="deleteAuction()">
+              Usuń aukcję
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Bids history -->
+      <app-bid-list 
+        [auctionId]="auction.id"
+        [bids]="bids"
+        #bidList
+      ></app-bid-list>
+    </div>
+  </div>
+</div>
+
+<!-- Loading spinner -->
+<div *ngIf="isLoading" class="text-center my-5">
+  <div class="spinner-border" role="status">
+    <span class="visually-hidden">Ładowanie...</span>
+  </div>
+  <p class="mt-3">Ładowanie szczegółów aukcji...</p>
+</div>
+
+<!-- Error message -->
+<div *ngIf="errorMessage" class="container mt-4">
+  <div class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
+  <a routerLink="/auctions" class="btn btn-primary">Powrót do listy aukcji</a>
+</div>
+
+<!-- Cancel auction modal -->
+<div class="modal overflow-hidden" tabindex="-1" [ngClass]="{'show': showCancelModal}" [ngStyle]="{'display': showCancelModal ? 'block' : 'none'}">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Anuluj aukcję</h5>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeCancelModal()"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="cancelForm">
+          <div class="mb-3">
+            <label for="reason" class="form-label">Powód anulowania</label>
+            <textarea 
+              class="form-control" 
+              id="reason" 
+              formControlName="reason" 
+              rows="3" 
+              [ngClass]="{'is-invalid': cancelForm.get('reason')?.invalid && cancelForm.get('reason')?.touched}"
+            ></textarea>
+            <div class="invalid-feedback" *ngIf="cancelForm.get('reason')?.errors?.['required'] && cancelForm.get('reason')?.touched">
+              Powód anulowania jest wymagany.
+            </div>
+            <div class="invalid-feedback" *ngIf="cancelForm.get('reason')?.errors?.['minlength'] && cancelForm.get('reason')?.touched">
+              Powód anulowania musi mieć co najmniej 10 znaków.
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeCancelModal()">Zamknij</button>
+        <button 
+          type="button" 
+          class="btn btn-danger" 
+          [disabled]="cancelForm.invalid || cancelSubmitting"
+          (click)="cancelAuction()"
+        >
+          <span *ngIf="cancelSubmitting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          Anuluj aukcję
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Only show backdrop when modal is open -->
+<div class="modal-backdrop fade" [ngClass]="{'show': showCancelModal}" *ngIf="showCancelModal"></div> 

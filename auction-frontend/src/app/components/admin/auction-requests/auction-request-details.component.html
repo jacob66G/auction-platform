@@ -1,0 +1,251 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Szczegóły żądania aukcji</h2>
+    <button class="btn btn-outline-secondary" (click)="navigateBack()">
+      <i class="bi bi-arrow-left me-1"></i> Powrót do listy
+    </button>
+  </div>
+
+  <!-- Alert messages -->
+  <div class="alert alert-danger alert-dismissible fade show" role="alert" *ngIf="errorMessage">
+    {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+  <div class="alert alert-success alert-dismissible fade show" role="alert" *ngIf="successMessage">
+    {{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+  </div>
+
+  <!-- Loading indicator -->
+  <div *ngIf="isLoading" class="text-center p-5">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">Ładowanie...</span>
+    </div>
+  </div>
+
+  <!-- Request details -->
+  <div *ngIf="!isLoading && requestDetails" class="row">
+    <!-- Left column: request info -->
+    <div class="col-md-5">
+      <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>Informacje o żądaniu</span>
+          <span class="badge" [ngClass]="getStatusBadgeClass(requestDetails.requestStatus)">
+            {{ getRequestStatusLabel(requestDetails.requestStatus) }}
+          </span>
+        </div>
+        <div class="card-body">
+          <table class="table table-striped">
+            <tbody>
+              <tr>
+                <th>ID żądania</th>
+                <td>{{ requestDetails.id }}</td>
+              </tr>
+              <tr>
+                <th>Typ żądania</th>
+                <td>
+                  <i [class]="'bi ' + getTypeIcon(requestDetails.requestType)"></i>
+                  {{ getRequestTypeLabel(requestDetails.requestType) }}
+                </td>
+              </tr>
+              <tr>
+                <th>Data żądania</th>
+                <td>{{ requestDetails.requestDate | date:'dd.MM.yyyy HH:mm:ss' }}</td>
+              </tr>
+              <tr *ngIf="requestDetails.requestStatus !== 'PENDING'">
+                <th>Data decyzji</th>
+                <td>{{ requestDetails.decisionDate | date:'dd.MM.yyyy HH:mm:ss' }}</td>
+              </tr>
+              <tr>
+                <th>Wnioskodawca</th>
+                <td>{{ requestDetails.requesterName }}</td>
+              </tr>
+              <tr *ngIf="requestDetails.moderatorName">
+                <th>Moderator</th>
+                <td>{{ requestDetails.moderatorName }}</td>
+              </tr>
+              <tr *ngIf="requestDetails.reason">
+                <th>Powód złożenia</th>
+                <td>{{ requestDetails.reason }}</td>
+              </tr>
+              <tr *ngIf="requestDetails.comment">
+                <th>Komentarz moderatora</th>
+                <td>{{ requestDetails.comment }}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Approve/Reject buttons for pending requests -->
+          <div class="d-flex gap-2 mt-3" *ngIf="canModerate()">
+            <button class="btn btn-success" (click)="openApproveModal()" [disabled]="isLoading">
+              <i class="bi bi-check-circle me-1"></i> Zatwierdź
+            </button>
+            <button class="btn btn-danger" (click)="openRejectModal()" [disabled]="isLoading">
+              <i class="bi bi-x-circle me-1"></i> Odrzuć
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: auction info -->
+    <div class="col-md-7">
+      <div class="card">
+        <div class="card-header">
+          <span>Informacje o aukcji</span>
+        </div>
+        <div class="card-body">
+          <h4>{{ requestDetails.auctionTitle }}</h4>
+          <p class="mb-3">
+            <span class="badge bg-secondary me-2">{{ requestDetails.categoryName }}</span>
+            <span class="badge bg-info">{{ requestDetails.auctionStatus }}</span>
+          </p>
+
+          <!-- Auction images -->
+          <div *ngIf="requestDetails.auctionImgsUrls && requestDetails.auctionImgsUrls.length > 0" class="mb-3">
+            <div class="d-flex flex-wrap gap-2">
+              <div *ngFor="let imgUrl of requestDetails.auctionImgsUrls" class="auction-image-thumbnail">
+                <img [src]="imgUrl" class="img-thumbnail" alt="Zdjęcie aukcji" style="width: 100px; height: 100px; object-fit: cover;">
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <h5>Opis</h5>
+            <p class="text-break">{{ requestDetails.description }}</p>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <h5>Cena wywoławcza</h5>
+              <p>{{ requestDetails.startingPrice | currency:'PLN':'symbol':'1.2-2' }}</p>
+            </div>
+            <div class="col-md-6">
+              <h5>Aktualna cena</h5>
+              <p>{{ requestDetails.actualPrice | currency:'PLN':'symbol':'1.2-2' }}</p>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <h5>Data rozpoczęcia</h5>
+              <p>{{ requestDetails.startTime | date:'dd.MM.yyyy HH:mm:ss' }}</p>
+            </div>
+            <div class="col-md-6">
+              <h5>Data zakończenia</h5>
+              <p>{{ requestDetails.endTime | date:'dd.MM.yyyy HH:mm:ss' }}</p>
+            </div>
+          </div>
+
+          <!-- Bids section -->
+          <div *ngIf="requestDetails.bids && requestDetails.bids.length > 0" class="mt-4">
+            <h5>Historia ofert ({{ requestDetails.bids.length }})</h5>
+            <table class="table table-sm table-striped">
+              <thead>
+                <tr>
+                  <th>Użytkownik</th>
+                  <th>Kwota</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let bid of requestDetails.bids">
+                  <td>{{ bid.username }}</td>
+                  <td>{{ bid.amount | currency:'PLN':'symbol':'1.2-2' }}</td>
+                  <td>{{ bid.bidDate | date:'dd.MM.yyyy HH:mm:ss' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Approve Modal -->
+<div class="modal fade" [ngClass]="{'show d-block': showApproveModal}" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Zatwierdzanie żądania</h5>
+        <button type="button" class="btn-close" (click)="closeModal()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Czy na pewno chcesz zatwierdzić to żądanie?</p>
+        <p><strong>Tytuł aukcji:</strong> {{ requestDetails?.auctionTitle }}</p>
+        <p><strong>Typ żądania:</strong> {{ requestDetails ? getRequestTypeLabel(requestDetails.requestType) : '' }}</p>
+        
+        <form [formGroup]="commentForm">
+          <div class="mb-3">
+            <label for="comment" class="form-label">Komentarz (opcjonalny)</label>
+            <textarea 
+              class="form-control" 
+              id="comment" 
+              rows="3" 
+              formControlName="comment"
+              placeholder="Wprowadź komentarz dla użytkownika..."
+            ></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Anuluj</button>
+        <button 
+          type="button" 
+          class="btn btn-success" 
+          (click)="approveRequest()" 
+          [disabled]="isLoading"
+        >
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          Zatwierdź
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" [ngClass]="{'show d-block': showRejectModal}" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Odrzucanie żądania</h5>
+        <button type="button" class="btn-close" (click)="closeModal()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Czy na pewno chcesz odrzucić to żądanie?</p>
+        <p><strong>Tytuł aukcji:</strong> {{ requestDetails?.auctionTitle }}</p>
+        <p><strong>Typ żądania:</strong> {{ requestDetails ? getRequestTypeLabel(requestDetails.requestType) : '' }}</p>
+        
+        <form [formGroup]="commentForm">
+          <div class="mb-3">
+            <label for="comment" class="form-label">Komentarz (opcjonalny)</label>
+            <textarea 
+              class="form-control" 
+              id="comment" 
+              rows="3" 
+              formControlName="comment"
+              placeholder="Wprowadź komentarz dla użytkownika..."
+            ></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Anuluj</button>
+        <button 
+          type="button" 
+          class="btn btn-danger" 
+          (click)="rejectRequest()" 
+          [disabled]="isLoading"
+        >
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          Odrzuć
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal backdrop -->
+<div class="modal-backdrop fade show" *ngIf="showApproveModal || showRejectModal"></div> 

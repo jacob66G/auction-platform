@@ -1,0 +1,42 @@
+// Register component styles 
+.register-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 500px;
+  padding: 2rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-actions {
+  margin-top: 2rem; /* Increased spacing before the button */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+}
+
+.login-link {
+  margin-top: 1rem;
+  text-align: center;
+} 

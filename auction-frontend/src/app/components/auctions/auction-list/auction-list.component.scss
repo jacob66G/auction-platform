@@ -1,0 +1,51 @@
+// Auction list component styles 
+.border.rounded {
+  border-color: #ced4da !important;
+}
+
+.category-dropdown {
+  position: relative;
+  
+  .dropdown-menu {
+    width: 100%;
+  }
+  
+  .category-item {
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    
+    input {
+      margin-right: 0.5rem;
+    }
+    
+    &:hover {
+      background-color: #f8f9fa;
+    }
+  }
+}
+
+.form-check-input:checked + .form-check-label {
+  font-weight: 500;
+  color: #0d6efd;
+}
+
+// Style dla statusu aukcji
+.card-body {
+  .badge {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.65rem;
+    margin-bottom: 0.5rem;
+    display: inline-block;
+  }
+}
+
+// Dodatkowe style dla kart aukcji
+.row-cols-1 .card {
+  transition: transform 0.2s;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+} 

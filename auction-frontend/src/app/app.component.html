@@ -1,0 +1,80 @@
+<!-- Navigation bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" routerLink="/">Auction Platform</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/auctions" routerLinkActive="active">Aukcje</a>
+        </li>
+        
+        <!-- Logged in user menu -->
+        <ng-container *ngIf="isLoggedIn">
+          <!-- Regular user options -->
+          <li class="nav-item" *ngIf="isUser()">
+            <a class="nav-link" routerLink="/auctions/create" routerLinkActive="active">Dodaj aukcję</a>
+          </li>
+          
+          <!-- Moderator options -->
+          <li class="nav-item dropdown" *ngIf="isModerator()">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Moderacja
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" routerLink="/moderator/requests">Zarządzanie zgłoszeniami</a></li>
+            </ul>
+          </li>
+          
+          <!-- Admin options -->
+          <li class="nav-item dropdown" *ngIf="isAdmin()">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Administracja
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" routerLink="/admin/users">Użytkownicy</a></li>
+              <li><a class="dropdown-item" routerLink="/admin/categories">Kategorie</a></li>
+              <li><a class="dropdown-item" routerLink="/admin/auction-requests">Zarządzanie żądaniami</a></li>
+            </ul>
+          </li>
+        </ng-container>
+      </ul>
+      
+      <!-- Auth menu -->
+      <ul class="navbar-nav">
+        <ng-container *ngIf="!isLoggedIn">
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/login" routerLinkActive="active">Logowanie</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/register" routerLinkActive="active">Rejestracja</a>
+          </li>
+        </ng-container>
+        
+        <ng-container *ngIf="isLoggedIn">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-person-circle me-1"></i> {{ username }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" routerLink="/user/profile">Profil</a></li>
+              <li *ngIf="isUser() || isModerator()"><a class="dropdown-item" routerLink="/auctions/search/my">Moje aukcje</a></li>
+              <li *ngIf="isUser() || isModerator()"><a class="dropdown-item" routerLink="/user/bids">Moje oferty</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" (click)="logout(); $event.preventDefault()">Wyloguj</a></li>
+            </ul>
+          </li>
+        </ng-container>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Main content -->
+<div class="container mt-4">
+  <router-outlet></router-outlet>
+</div>
+

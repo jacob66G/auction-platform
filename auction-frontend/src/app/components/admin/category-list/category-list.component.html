@@ -1,0 +1,114 @@
+<div class="container mt-4">
+  <h2>Zarządzanie kategoriami</h2>
+  
+  <!-- Alert messages -->
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+  
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+  </div>
+  
+  <!-- Category Form -->
+  <div class="card mb-4">
+    <div class="card-header">
+      {{ isEditing ? 'Edytuj kategorię' : 'Dodaj nową kategorię' }}
+    </div>
+    <div class="card-body">
+      <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()">
+        <div class="mb-3">
+          <label for="name" class="form-label">Nazwa kategorii</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            id="name" 
+            formControlName="name" 
+            [ngClass]="{'is-invalid': categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched}"
+          >
+          <div class="invalid-feedback" *ngIf="categoryForm.get('name')?.errors?.['required'] && categoryForm.get('name')?.touched">
+            Nazwa kategorii jest wymagana.
+          </div>
+          <div class="invalid-feedback" *ngIf="categoryForm.get('name')?.errors?.['minlength'] && categoryForm.get('name')?.touched">
+            Nazwa kategorii musi mieć co najmniej 3 znaki.
+          </div>
+          <div class="invalid-feedback" *ngIf="categoryForm.get('name')?.errors?.['maxlength'] && categoryForm.get('name')?.touched">
+            Nazwa kategorii nie może przekraczać 50 znaków.
+          </div>
+        </div>
+        
+        <div class="d-flex">
+          <button 
+            type="submit" 
+            class="btn btn-primary me-2" 
+            [disabled]="categoryForm.invalid || isLoading"
+          >
+            <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            {{ isEditing ? 'Aktualizuj' : 'Dodaj' }}
+          </button>
+          
+          <button 
+            *ngIf="isEditing" 
+            type="button" 
+            class="btn btn-secondary" 
+            (click)="cancelEdit()"
+          >
+            Anuluj
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Categories Table -->
+  <div class="card">
+    <div class="card-header">
+      Lista kategorii
+    </div>
+    <div class="card-body">
+      <div *ngIf="isLoading && !categories.length" class="text-center p-3">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Ładowanie...</span>
+        </div>
+      </div>
+      
+      <div *ngIf="!isLoading && !categories.length" class="alert alert-info">
+        Brak kategorii do wyświetlenia.
+      </div>
+      
+      <div class="table-responsive" *ngIf="categories.length">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nazwa</th>
+              <th>Akcje</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let category of categories">
+              <td>{{ category.id }}</td>
+              <td>{{ category.name }}</td>
+              <td>
+                <button 
+                  class="btn btn-sm btn-outline-primary me-2" 
+                  (click)="editCategory(category)"
+                >
+                  Edytuj
+                </button>
+                <button 
+                  class="btn btn-sm btn-outline-danger" 
+                  (click)="deleteCategory(category.id)"
+                >
+                  Usuń
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div> 

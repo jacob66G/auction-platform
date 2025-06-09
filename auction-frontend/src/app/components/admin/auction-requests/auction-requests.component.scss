@@ -1,0 +1,25 @@
+// Style for the badge with icon
+.badge i {
+  margin-right: 0.25rem;
+}
+
+// Modal styling when active
+.modal.show {
+  display: block;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+// Add some spacing to the table cells
+.table td, .table th {
+  vertical-align: middle;
+}
+
+// Make the cursor a pointer for action buttons
+button {
+  cursor: pointer;
+}
+
+// Style for the reason text
+.modal-body p {
+  margin-bottom: 0.75rem;
+} 

@@ -1,0 +1,139 @@
+<div class="container mt-4">
+  <h2>Zarządzanie użytkownikami</h2>
+
+  <!-- Alert messages -->
+  <div class="alert alert-danger alert-dismissible fade show" role="alert" *ngIf="errorMessage">
+    {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+  <div class="alert alert-success alert-dismissible fade show" role="alert" *ngIf="successMessage">
+    {{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+  </div>
+
+  <!-- Search Form -->
+  <div class="card mb-4">
+    <div class="card-header">
+      Wyszukiwanie użytkowników
+    </div>
+    <div class="card-body">
+      <form [formGroup]="searchForm" (ngSubmit)="searchUsers()">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="searchTerm" class="form-label">Nazwa użytkownika lub email</label>
+            <input type="text" class="form-control" id="searchTerm" formControlName="searchTerm" placeholder="Wpisz nazwę użytkownika lub email">
+          </div>
+          <div class="col-md-6">
+            <label for="role" class="form-label">Rola</label>
+            <select class="form-select" id="role" formControlName="role">
+              <option *ngFor="let role of availableRoles" [value]="role.value">
+                {{ role.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="d-flex">
+          <button type="submit" class="btn btn-primary me-2">Szukaj</button>
+          <button type="button" class="btn btn-secondary" (click)="onReset()">Resetuj</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Users List -->
+  <div class="card">
+    <div class="card-header">
+      Lista użytkowników
+    </div>
+    <div class="card-body">
+      <div *ngIf="isLoading" class="text-center p-5">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Ładowanie...</span>
+        </div>
+      </div>
+
+      <div *ngIf="!isLoading && !users.length" class="alert alert-info">
+        Brak użytkowników do wyświetlenia.
+      </div>
+
+      <div class="table-responsive" *ngIf="!isLoading && users.length">
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Nazwa użytkownika</th>
+              <th scope="col">Email</th>
+              <th scope="col">Rola</th>
+              <th scope="col">Akcje</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of users">
+              <td>{{ user.id }}</td>
+              <td>{{ user.username }}</td>
+              <td>{{ user.email }}</td>
+              <td>
+                <span class="badge" [ngClass]="getRoleBadgeClass(user.role)">
+                  {{ getRoleDisplayName(user.role) }}
+                </span>
+              </td>
+              <td>
+                <div class="btn-group" role="group">
+                  <button 
+                    *ngIf="canAssignModeratorRole(user)" 
+                    class="btn btn-sm btn-success me-1" 
+                    (click)="assignModeratorRole(user)"
+                    [disabled]="isLoading">
+                    Nadaj rolę moderatora
+                  </button>
+                  <button 
+                    *ngIf="canRevokeModeratorRole(user)" 
+                    class="btn btn-sm btn-warning me-1" 
+                    (click)="revokeModeratorRole(user)"
+                    [disabled]="isLoading">
+                    Odbierz rolę moderatora
+                  </button>
+                  <button 
+                    *ngIf="canDeleteUser(user)" 
+                    class="btn btn-sm btn-danger" 
+                    (click)="openDeleteModal(user)"
+                    [disabled]="isLoading">
+                    Usuń
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete User Modal -->
+<div class="modal fade" [ngClass]="{'show d-block': showDeleteModal}" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Potwierdzenie usunięcia</h5>
+        <button type="button" class="btn-close" (click)="closeDeleteModal()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p *ngIf="userToDelete">
+          Czy na pewno chcesz usunąć użytkownika <strong>{{ userToDelete.username }}</strong>?
+          Ta operacja jest nieodwracalna.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDeleteModal()">Anuluj</button>
+        <button type="button" class="btn btn-danger" (click)="confirmDeleteUser()" [disabled]="isLoading">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          Usuń
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal backdrop -->
+<div class="modal-backdrop fade show" *ngIf="showDeleteModal"></div> 

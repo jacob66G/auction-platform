@@ -1,0 +1,181 @@
+<div class="container mt-4">
+  <h2>
+    <ng-container *ngIf="viewMode === 'public'">Wszystkie aukcje</ng-container>
+    <ng-container *ngIf="viewMode === 'my'">Moje aukcje</ng-container>
+    <ng-container *ngIf="viewMode === 'admin'">Zarządzanie aukcjami</ng-container>
+  </h2>
+  
+  <!-- Search Form -->
+  <div class="card mb-4">
+    <div class="card-header">
+      Wyszukiwanie
+    </div>
+    <div class="card-body">
+      <form [formGroup]="searchForm" (ngSubmit)="onSearch()">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="title" class="form-label">Tytuł</label>
+            <input type="text" class="form-control" id="title" formControlName="title">
+          </div>
+          
+          <div class="col-md-6">
+            <label class="form-label">Kategorie</label>
+            <div class="dropdown category-dropdown">
+              <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start d-flex justify-content-between align-items-center" 
+                      type="button" 
+                      id="categoryDropdown" 
+                      (click)="toggleCategoryDropdown($event)">
+                <span>{{ selectedCategoryIds.length ? selectedCategoryIds.length + ' wybrane' : 'Wybierz kategorie' }}</span>
+              </button>
+              <div class="dropdown-menu w-100" [class.show]="isCategoryDropdownOpen">
+                <div class="p-2" style="max-height: 200px; overflow-y: auto;">
+                  <div class="category-item" *ngFor="let category of categories">
+                    <input 
+                      class="form-check-input" 
+                      type="checkbox" 
+                      [id]="'category-' + category.id" 
+                      [value]="category.id" 
+                      [checked]="selectedCategoryIds.includes(category.id)"
+                      (change)="onCategoryChange($event, category.id)">
+                    <label class="form-check-label" [for]="'category-' + category.id">
+                      {{ category.name }}
+                    </label>
+                  </div>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="p-2 d-flex">
+                  <button type="button" class="btn btn-sm btn-outline-secondary w-100" (click)="clearCategories()">
+                    Wyczyść wybrane
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="sortBy" class="form-label">Sortuj według</label>
+            <div class="input-group">
+              <select class="form-select" id="sortBy" formControlName="sortBy">
+                <option value="startTime">Data rozpoczęcia</option>
+                <option value="endTime">Data zakończenia</option>
+                <option value="actualPrice">Aktualna cena</option>
+              </select>
+              <div class="input-group-text">
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" id="ascending" [value]="true" formControlName="ascending">
+                  <label class="form-check-label" for="ascending">Rosnąco</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" id="descending" [value]="false" formControlName="ascending">
+                  <label class="form-check-label" for="descending">Malejąco</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Status filter for "My Auctions" view -->
+          <div class="col-md-6" *ngIf="viewMode === 'my'">
+            <label for="status" class="form-label">Status</label>
+            <select class="form-select" id="status" formControlName="status">
+              <option value="">Wszystkie</option>
+              <option *ngFor="let status of availableStatuses" [value]="status">
+                {{ statusTranslations[status] }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="col-md-6" *ngIf="viewMode === 'admin'">
+            <label for="username" class="form-label">Użytkownik</label>
+            <input type="text" class="form-control" id="username" formControlName="username">
+          </div>
+        </div>
+        
+        <div class="d-flex">
+          <button type="submit" class="btn btn-primary me-2">Szukaj</button>
+          <button type="button" class="btn btn-secondary" (click)="onReset()">Resetuj</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Auctions List -->
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>Lista aukcji</span>
+      <a *ngIf="isAuthenticated && isRegularUser()" routerLink="/auctions/create" class="btn btn-sm btn-success">Dodaj nową aukcję</a>
+    </div>
+    <div class="card-body">
+      <div *ngIf="isLoading" class="text-center p-5">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Ładowanie...</span>
+        </div>
+      </div>
+      
+      <div *ngIf="!isLoading && !auctions.length" class="alert alert-info">
+        Brak aukcji do wyświetlenia.
+      </div>
+      
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4" *ngIf="!isLoading && auctions.length">
+        <div class="col" *ngFor="let auction of auctions">
+          <div class="card h-100">
+            <img *ngIf="auction.auctionImgUrl" [src]="auction.auctionImgUrl" class="card-img-top" alt="Zdjęcie aukcji">
+            <div *ngIf="!auction.auctionImgUrl" class="card-img-top bg-light text-center p-3">
+              <i class="bi bi-image" style="font-size: 3rem;"></i>
+              <p class="mt-2">Brak zdjęcia</p>
+            </div>
+            <div class="card-body">
+              <h5 class="card-title">{{ auction.title }}</h5>
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge bg-secondary">{{ auction.categoryName }}</span>
+                <!-- Wyświetl status tylko w widoku "Moje aukcje" -->
+                <span class="badge" *ngIf="viewMode === 'my' && auction.auctionStatus" [ngClass]="{
+                  'bg-success': auction.auctionStatus === 'ACTIVE',
+                  'bg-danger': auction.auctionStatus === 'CANCELLED' || auction.auctionStatus === 'REJECTED',
+                  'bg-warning': auction.auctionStatus === 'PENDING_APPROVAL',
+                  'bg-secondary': auction.auctionStatus === 'FINISHED' || auction.auctionStatus === 'EXPIRED'
+                }">
+                  {{ statusTranslations[auction.auctionStatus] || auction.auctionStatus }}
+                </span>
+              </div>
+              <p class="card-text">
+                <strong>Cena:</strong> {{ auction.actualPrice | plnCurrency }}
+              </p>
+              <p class="card-text">
+                <small class="text-muted">Sprzedający: {{ auction.username }}</small>
+              </p>
+              <p class="card-text">
+                <small class="text-muted">Koniec: {{ auction.endTime | date:'dd.MM.yyyy HH:mm' }}</small>
+              </p>
+              <a [routerLink]="['/auctions', auction.id]" class="btn btn-primary">Szczegóły</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="d-flex justify-content-center mt-4" *ngIf="!isLoading && auctions.length">
+        <nav>
+          <ul class="pagination">
+            <li class="page-item" [class.disabled]="currentPage === 0">
+              <a class="page-link" href="javascript:void(0)" (click)="onPageChange(currentPage - 1)">
+                Poprzednia
+              </a>
+            </li>
+            <li class="page-item" [class.active]="currentPage === i" *ngFor="let i of [0, 1, 2, 3, 4]">
+              <a class="page-link" href="javascript:void(0)" (click)="onPageChange(i)">
+                {{ i + 1 }}
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="javascript:void(0)" (click)="onPageChange(currentPage + 1)">
+                Następna
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div> 
