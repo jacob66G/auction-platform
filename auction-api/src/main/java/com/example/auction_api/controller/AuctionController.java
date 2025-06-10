@@ -34,9 +34,9 @@ public class AuctionController {
             @RequestParam(required = false) String username,
             @RequestParam(required = false) List<Integer> categoryIds,
             @RequestParam(defaultValue = "startTime") String sortBy,
-            @RequestParam(defaultValue = "true") boolean ascending,
+            @RequestParam(defaultValue = "false") boolean ascending,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "9") int size) {
 
         AuctionSearchCriteria criteria = AuctionSearchCriteria.builder()
                 .title(title)
@@ -58,9 +58,9 @@ public class AuctionController {
             @RequestParam(required = false) List<Integer> categoryIds,
             @RequestParam(required = false) List<String> statuses,
             @RequestParam(defaultValue = "startTime") String sortBy,
-            @RequestParam(defaultValue = "true") boolean ascending,
+            @RequestParam(defaultValue = "false") boolean ascending,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "9") int size
     ) {
         AuctionSearchCriteria criteria = AuctionSearchCriteria.builder()
                 .title(title)
@@ -82,9 +82,9 @@ public class AuctionController {
             @RequestParam(required = false) List<Integer> categoryIds,
             @RequestParam(required = false) List<String> statuses,
             @RequestParam(defaultValue = "startTime") String sortBy,
-            @RequestParam(defaultValue = "true") boolean ascending,
+            @RequestParam(defaultValue = "false") boolean ascending,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "9") int size
     ) {
         AuctionSearchCriteria criteria = AuctionSearchCriteria.builder()
                 .title(title)
@@ -113,14 +113,6 @@ public class AuctionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(auctionService.createAuction(auction, images));
     }
 
-//    @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public ResponseEntity<AuctionResponse> updateAuction(
-//            @PathVariable Long id,
-//            @Valid @RequestPart AuctionCreateDto auction,
-//            @RequestPart(value= "images", required = false) MultipartFile[] images)
-//    {
-//        return ResponseEntity.ok().body(auctionService.updateAuction(id, auction, images));
-//    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<MessageResponse> deleteAuction(@PathVariable Long id) {

@@ -2,7 +2,8 @@ package com.example.auction_api.controller;
 
 import com.example.auction_api.dto.request.ChangePasswordRequest;
 import com.example.auction_api.dto.request.DepositRequest;
-import com.example.auction_api.dto.request.UserRequest;
+import com.example.auction_api.dto.request.ChangeEmailRequest;
+import com.example.auction_api.dto.response.UserDetailsResponse;
 import com.example.auction_api.dto.response.UserResponse;
 import com.example.auction_api.service.UserService;
 import jakarta.validation.Valid;
@@ -20,7 +21,7 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> getCurrentUser() {
+    public ResponseEntity<UserDetailsResponse> getCurrentUser() {
         return ResponseEntity.ok().body(userService.getUser());
     }
 
@@ -30,14 +31,15 @@ public class UserController {
         return ResponseEntity.ok("Change password successful");
     }
 
+    @PutMapping("/change-email")
+    public ResponseEntity<String> changeEmail(@Valid @RequestBody ChangeEmailRequest request) {
+        userService.changeEmail(request);
+        return ResponseEntity.ok("Change email successful");
+    }
+
     @PutMapping("/deposit")
     public ResponseEntity<String> changeBalance(@Valid @RequestBody DepositRequest request) {
         userService.deposit(request);
         return ResponseEntity.ok("Deposit successful");
-    }
-
-    @PutMapping("/change-personal-data")
-    public ResponseEntity<UserResponse> changePersonalData(@Valid @RequestBody UserRequest request) {
-        return ResponseEntity.ok().body(userService.updateUser(request));
     }
 }

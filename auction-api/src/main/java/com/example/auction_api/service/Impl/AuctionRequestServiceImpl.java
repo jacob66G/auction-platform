@@ -2,6 +2,7 @@ package com.example.auction_api.service.Impl;
 
 import com.example.auction_api.dao.AuctionRequestDao;
 import com.example.auction_api.dto.request.AuctionRequestCriteria;
+import com.example.auction_api.dto.response.AuctionRequestDetailsResponse;
 import com.example.auction_api.dto.response.AuctionRequestResponse;
 import com.example.auction_api.entity.Auction;
 import com.example.auction_api.entity.AuctionRequest;
@@ -36,11 +37,11 @@ public class AuctionRequestServiceImpl implements AuctionRequestService {
     }
 
     @Override
-    public AuctionRequestResponse getAuctionRequestById(Long id) {
+    public AuctionRequestDetailsResponse getAuctionRequestById(Long id) {
         AuctionRequest request = auctionRequestDao.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(AuctionRequest.class.getSimpleName(), id));
 
-        return mapper.toResponse(request);
+        return mapper.toDetailsResponse(request);
     }
 
     @Override
@@ -55,5 +56,10 @@ public class AuctionRequestServiceImpl implements AuctionRequestService {
         request.setRequestedBy(auction.getUser());
 
         auctionRequestDao.save(request);
+    }
+
+    @Override
+    public long countByAuctionIdAndRequestType(Long id, RequestType requestType) {
+        return auctionRequestDao.countByAuctionIdAndRequestType(id, requestType);
     }
 }

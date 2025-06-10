@@ -71,8 +71,6 @@ public class CategoryServiceImpl implements CategoryService {
             throw new HasAssociationException(Category.class.getSimpleName(), id);
         }
 
-        //TODO replace categories to delete in auctions
-
         getCategoryEntityById(id);
         categoryDao.deleteById(id);
     }
