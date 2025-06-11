@@ -12,7 +12,5 @@ public interface BidService {
     List<BidResponse> getBidByAuctionId(Long auctionId);
     BidResponse getBidById(Long id);
     BidResponse createBid(BidRequest bidRequest);
-    void deleteBid(Long id);
     Bid getWinnerBid(Long auctionId);
-    void refundBidders(Auction auction);
 }

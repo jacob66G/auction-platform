@@ -29,8 +29,8 @@ public class GlobalExceptionHandler {
 
         ErrorResponse response = new ErrorResponse(
                 400,
-                "Validation failed for the request",
                 errors.toString(),
+                "Validation failed for the request",
                 LocalDateTime.now()
         );
 
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({ValidationImagesException.class, MaxUploadSizeExceededException.class})
-    public ResponseEntity<ErrorResponse> handleValidationException(ValidationImagesException ex) {
+    public ResponseEntity<ErrorResponse> handleValidationException(RuntimeException ex) {
         ErrorResponse response = new ErrorResponse(
                 400,
                 ex.getMessage(),
@@ -80,6 +80,7 @@ public class GlobalExceptionHandler {
             EmailAlreadyExistsException.class,
             UsernameAlreadyExistsException.class,
             HasAssociationException.class,
+            EmailChangeNotAllowedException.class
 
     })
     ResponseEntity<ErrorResponse> handleConflict(RuntimeException ex) {
@@ -109,27 +110,15 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    ResponseEntity<ErrorResponse> handleAccessDenied() {
+    @ExceptionHandler(ForbiddenException.class)
+    ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException ex) {
         ErrorResponse response = new ErrorResponse(
-                401,
-                "You do not have the necessary permissions to access this resource.",
+                403,
+                ex.getMessage(),
                 "Access denied",
                 LocalDateTime.now()
         );
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
-    }
-
-
-    @ExceptionHandler(AuthenticationException.class)
-    ResponseEntity<ErrorResponse> handleAuthentication(AuthenticationException ex) {
-        ErrorResponse response = new ErrorResponse(
-                401,
-                "Authentication is required to access this resource.",
-                "Unauthorized",
-                LocalDateTime.now()
-        );
-        return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(Exception.class)
